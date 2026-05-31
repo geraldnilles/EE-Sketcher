@@ -42,16 +42,21 @@ The width of the component rect is not fixed. It can be grown arbitrarily depend
 
 ### New Block Creation and Editing
 
-When a new block is created or edited, a pop up form will appear.  It will have 2 columns of text boxes where the pin labels can be added.  
+A button on the side bar will be used to create a new block.  It will place a 2 pin block with placeholder values.
 
-The number of rows will depend on how tall the component is.  There will be a +/- button in the pop up for expanding or deleting rows.
+When a block is clicked, an edit form will appear on the side bar.  It will have 2 columns of text boxes where the pin labels can be added.  
 
+There will also be a top and bottom text lable which label the entire block just above and below the rect.  Centered.
+
+The number of rows will depend on how tall the component is.  There will be a + and - buttons in the side bar for expanding or deleting rows.  Each click will increase/decrease the height of the block, adding or subtracting a row of pin labels.
+
+There will also be two buttons for increasing and decreasing the width of the block.  Each click will expand/contract the width by 50 units so that the pin connection points can remain on the grid.
 
 ## Net Connections
 
 All net connections will be represented with "line" elements in SVGs
 
-All lines can only be horizontal or vertical
+All lines must be horizontal or vertical
 
 When drawing a new connection, you can enter a connection mode where each mouse click starts and stops a line connection.
 
@@ -59,4 +64,10 @@ If a line end point touches an existing line, a junction symbol will be added in
 
 ## Dragging 
 
-This is probably the more difficult part
+This is probably the most difficult implementation details.  Ideally, you could drag and drop a connected component and it would attempt to keep them connected.  However, handling all the corner cases in a way that acts predictably would be very difficult.
+
+I wonder if i should just not attempt to maintain any connections automatically and make hte user manually adjust each net connection when a component is shifted.
+
+Or maybe horizontal drags will be allowed since that will be trivial (just see which lines touch the pins points and increase/decrease the length.
+
+I'll think more about this.
