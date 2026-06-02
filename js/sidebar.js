@@ -109,6 +109,7 @@
       class: 'danger',
       style: 'width: 100%; margin-top: 4px;',
       onclick: () => global.deleteComponent(g),
+      title: "Delete Component  [x / Backspace / Delete]",
     }, ['Delete Component']));
   }
 
@@ -124,6 +125,7 @@
       class: 'danger',
       style: 'width: 100%;',
       onclick: () => global.deleteLine(line),
+      title: "Delete Line  [x / Backspace / Delete]",
     }, ['Delete Line']));
   }
 

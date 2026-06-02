@@ -267,9 +267,27 @@
       }
 
       if (evt.target && /(INPUT|TEXTAREA|SELECT)/.test(evt.target.tagName || '')) return;
-      if (evt.key === 'v' || evt.key === 'V') global.setMode('select');
+      if (evt.key === 's' || evt.key === 'S') global.setMode('select');
       if (evt.key === 'd' || evt.key === 'D') global.setMode('drag');
       if (evt.key === 'c' || evt.key === 'C') global.setMode('connect');
+
+      /* ---- a key: add a new generic component ---- */
+      if (evt.key === 'a' || evt.key === 'A') {
+        const btn = document.getElementById('add-component-btn');
+        if (btn) btn.click();
+      }
+
+      /* ---- x, Backspace, Delete: delete selected element ---- */
+      if (evt.key === 'x' || evt.key === 'X' || evt.key === 'Backspace' || evt.key === 'Delete') {
+        const el = global.appState.selected;
+        if (el) {
+          if (el.classList && el.classList.contains('net-line')) {
+            global.deleteLine(el);
+          } else {
+            global.deleteComponent(el);
+          }
+        }
+      }
     });
 
     /* ---- mode change ---- */
