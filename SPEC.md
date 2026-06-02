@@ -122,18 +122,46 @@ For the MVP, object destruction is strictly UI-driven to keep state synchronizat
 
 ## 5. Implementation Architecture
 
-To maximize portability, ease of deployment, and simplicity, the editor will be written entirely as a vanilla web asset.
+To maximize portability, ease of deployment, and simplicity, the editor is written entirely as a vanilla web asset, split across multiple files for maintainability. All assets are co-located in the project root and linked together at load time.
 
-* **Single-File Delivery:** The entire application must reside in a single standalone `index.html` file. This file contains:
-* Structure (HTML5 structural markup)
-* Styling (CSS3 layouts, grid overlays, UI formatting)
-* Logic (Vanilla JavaScript ES6+ state engine, DOM selectors, event listeners)
+### 5.1 File / Directory Layout
 
+The application is composed of one HTML file, one CSS file, and several JavaScript files, organized as follows:
 
-* **No Build Step:** The app requires no compiler, bundler (Webpack/Vite), node modules, or third-party framework runtime libraries (React/Vue). It must run flawlessly simply by being opened locally in any modern web browser.
-* **DOM as State:** The interactive SVG canvas element serves as the primary source of truth for the schematic's current state. Complex JSON backing stores are avoided; instead, native DOM attributes (`transform`, `x`, `y`, data-attributes) are queried and updated directly by interaction handlers.
+```
+/
+├── index.html          # HTML5 structural markup; the only entry point
+├── styles.css          # All CSS3 styling (layouts, grid overlays, UI formatting)
+└── js/
+    ├── main.js         # Entry point: bootstraps state, wires event listeners, runs init()
+    ├── state.js        # Application state & mode switching (Select/Edit, Drag, Connection)
+    ├── components.js   # Generic Block component create / update / delete logic
+    ├── nets.js         # Line net CRUD, T-junction detection, line splitting, junction circles
+    ├── interactions.js # Pointer/click handlers: select, drag-translate, drag-endpoint, connection-drawing
+    ├── sidebar.js      # Sidebar rendering & forms: pin labels, row +/-, width +/-, delete buttons
+    └── serialization.js# Export Schema / Import Schema (XMLSerializer, DOMParser, re-binding)
+```
 
----
+### 5.2 Asset Linking
+
+* **`index.html`** contains the structural markup (sidebar, toolbar, canvas `<svg>`, Data Portal `<textarea>`) and pulls in the other assets declaratively:
+  * `<link rel="stylesheet" href="styles.css">` in `<head>`.
+  * `<script src="js/serialization.js"></script>` ... `<script src="js/main.js"></script>` at the end of `<body>`, loaded with `defer` (or as plain scripts placed in dependency order: `state.js` → `components.js` → `nets.js` → `interactions.js` → `sidebar.js` → `serialization.js` → `main.js`).
+* **`styles.css`** owns every visual concern: grid overlay rendering, sidebar layout, button styling, selection highlight, mode-toggle active states, and the Data Portal `<textarea>` appearance.
+* **`js/state.js`** exposes a single shared `appState` object (current mode, selected element reference, last-drawn net start point) and a `setMode(mode)` function. All other modules read from and write to this object.
+* **`js/components.js`** defines `createComponent(x, y, width, rows)`, `updateComponent(el, patch)`, `deleteComponent(el)`, and helpers to add/remove pin rows and adjust width by 50-unit increments.
+* **`js/nets.js`** defines `createLine(x1, y1, x2, y2)`, `deleteLine(el)`, `splitLineAt(line, x, y)`, and `recomputeJunctions()` — the latter scans every line endpoint, groups them by grid coordinate, and adds/removes `<circle r="4">` junction nodes per the 3-or-4-endpoint heuristic.
+* **`js/interactions.js`** attaches all pointer event listeners to the SVG canvas. It dispatches to the correct behavior based on `appState.mode` (selection, drag-translation, drag-endpoint, or connection point-to-point drawing).
+* **`js/sidebar.js`** reads the currently selected element from `appState` and renders the appropriate settings panel (component panel with pin labels / row + / row - / expand / contract / delete, or line net panel with metadata and delete).
+* **`js/serialization.js`** implements `exportSchema()` (clone the `<svg>`, strip transient UI layers, `XMLSerializer.serializeToString`, return the string) and `importSchema(text)` (wipe canvas, `DOMParser` → fragment, re-bind listeners, run `recomputeJunctions()`).
+* **`js/main.js`** runs on `DOMContentLoaded`: instantiates `appState`, performs any initial DOM setup, and kicks off event binding.
+
+### 5.3 Constraints (Preserved)
+
+* **No Build Step:** The app requires no compiler, bundler (Webpack/Vite), node modules, or third-party framework runtime libraries (React/Vue). There is no transpilation or minification step. The plain files are deployed as-is.
+* **No Server Required:** Because all assets are loaded via relative paths and the application performs no `fetch`/`XHR` calls at runtime, the project runs flawlessly by being opened locally in any modern web browser (e.g., double-clicking `index.html` or serving the root with any static file server).
+* **DOM as State:** The interactive SVG canvas element remains the primary source of truth for the schematic's current state. Each `.js` file queries and mutates native DOM attributes (`transform`, `x`, `y`, data-attributes) directly. No JSON backing store, no virtual DOM, no reactive framework layer is introduced.
+* **Plain ES6+ JavaScript:** All modules use native ES6+ syntax (modules may be plain scripts attached to a shared global `window` namespace, or native ES modules with `type="module"` — either is acceptable as long as no build tooling is required).
 
 ## 6. Serialization & Data Persistence (Save/Load)
 

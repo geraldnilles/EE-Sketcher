@@ -1,0 +1,1 @@
+OBJECTIVE: Modify SPEC.md.  Instead of a single large html file. i want to break it up into seprate files, 1 HTML, 1 CSS, and several JS files which are all linked into the HTML file.
