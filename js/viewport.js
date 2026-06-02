@@ -3,7 +3,8 @@
    Pan & zoom for the SVG canvas.
    - Replaces the static viewBox with a dynamic one centred on the world
      so the canvas opens at a "natural" size by default.
-   - Plain wheel  -> pan (deltaY / scale)
+   - Plain wheel     -> pan (deltaX, deltaY)
+   - Shift + wheel   -> horizontal pan only
    - Ctrl/Cmd+wheel -> zoom in/out around the cursor
      (Trackpad pinch-zoom also fires as ctrlKey+wheel in browsers, so
      pinch works as zoom for free.)
@@ -165,6 +166,9 @@
       // Use a smooth exponential mapping.
       const factor = Math.exp(-evt.deltaY * 0.01);
       zoom(factor, evt.clientX, evt.clientY);
+    } else if (evt.shiftKey) {
+      // Shift + wheel = horizontal pan only (map the vertical wheel delta to horizontal scroll).
+      panByPixels(evt.deltaY, 0);
     } else {
       // Plain wheel = pan.  Trackpads deliver small deltaY frequently;
       // mice deliver large deltas rarely.  We use the raw pixel delta.
