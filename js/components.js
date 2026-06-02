@@ -127,6 +127,7 @@
 
     let rows  = getRows(el);
     let width = getWidth(el);
+    let structuralChanged = false;
 
     // Mutation helpers -----------------------------------------------------
     if (patch.addRow || patch.removeRow || patch.expand || patch.contract) {
@@ -160,6 +161,7 @@
       el.setAttribute('data-width', String(width));
       el.setAttribute('data-rows',  String(rows));
       setRectSize(el, width, rows);
+      structuralChanged = true;
     }
 
     // Label patches
@@ -181,7 +183,14 @@
     // If this component is currently selected, ask the sidebar to re-render
     // so the +/- Row and Expand/Contract buttons reflect the new state
     // (disabled flags are computed at render time).
-    if (global.appState && global.appState.selected === el) {
+    //
+    // IMPORTANT: only fire this on STRUCTURAL changes.  Re-rendering the
+    // sidebar blows away and recreates every <input>, which steals focus
+    // mid-keystroke from whichever label the user is currently editing.
+    // Label-only patches (labelL / labelR) are reflected directly in the
+    // SVG <text> nodes and the user is already typing in the live <input>,
+    // so the sidebar does not need to be re-rendered for them.
+    if (structuralChanged && global.appState && global.appState.selected === el) {
       global.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: el } }));
     }
   }
