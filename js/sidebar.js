@@ -51,7 +51,12 @@
         'data-side': 'L', 'data-row': String(i),
         oninput: (e) => {
           const idx = +e.target.getAttribute('data-row');
-          const newL = labels.left.slice();
+          // Always read the latest labels from the SVG (source of truth).
+          // If we used the closure's `labels` instead, typing into a second
+          // field would send back stale values for every OTHER field, which
+          // would silently revert any edits made to those fields since this
+          // sidebar was last rendered.
+          const newL = global.readLabels(g).left.slice();
           newL[idx] = e.target.value;
           global.updateComponent(g, { labelL: newL });
         },
@@ -61,7 +66,9 @@
         'data-side': 'R', 'data-row': String(i),
         oninput: (e) => {
           const idx = +e.target.getAttribute('data-row');
-          const newR = labels.right.slice();
+          // See comment above — read the latest labels from the SVG so we
+          // never overwrite a sibling field with a stale value.
+          const newR = global.readLabels(g).right.slice();
           newR[idx] = e.target.value;
           global.updateComponent(g, { labelR: newR });
         },
