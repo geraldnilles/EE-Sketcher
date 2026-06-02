@@ -10,6 +10,15 @@
 
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
+  /**
+   * LINE_PICK_TOLERANCE: how many SVG user units away from a line's path
+   * a click is still considered to have hit it.  10 units = 40% of a grid
+   * cell, generous enough to forgive a few px of slop at default zoom,
+   * but tight enough that clicking in the gap between two adjacent lines
+   * still hits the nearer one only.
+   */
+  const LINE_PICK_TOLERANCE = 10;
+
   /* ----- helpers ----- */
   function svgPoint(evt) {
     const svg = document.getElementById('canvas');
@@ -43,6 +52,23 @@
       n = n.parentNode;
     }
     return { kind: 'canvas', el: null };
+  }
+
+  /**
+   * Upgrade a 'canvas' (no direct hit) target to a 'line' target if the
+   * click is within LINE_PICK_TOLERANCE of some line's segment path.
+   * Returns the original target unchanged when it isn't 'canvas' or when
+   * no nearby line is found.  This is what makes line selection
+   * forgiving without affecting component selection or connect-mode
+   * drawing.
+   */
+  function pickLineWithTolerance(evt, target) {
+    if (target.kind !== 'canvas') return target;
+    if (typeof global.findLineNearPoint !== 'function') return target;
+    const p = svgPoint(evt);
+    const near = global.findLineNearPoint(p.x, p.y, LINE_PICK_TOLERANCE);
+    if (near) return { kind: 'line', el: near };
+    return target;
   }
 
   /* ----- selection ----- */
@@ -114,7 +140,9 @@
     svg.addEventListener('pointerdown', (evt) => {
       if (evt.button !== 0) return;
       const st = global.appState;
-      const tgt = resolveTarget(evt);
+      let   tgt = resolveTarget(evt);
+      // Forgiveness: in drag mode, a near-miss on a line should still pick it.
+      if (st.mode === 'drag') tgt = pickLineWithTolerance(evt, tgt);
 
       if (st.mode === 'drag') {
         if (tgt.kind === 'component') {
@@ -163,7 +191,9 @@
     /* ---- click ---- */
     svg.addEventListener('click', (evt) => {
       const st = global.appState;
-      const tgt = resolveTarget(evt);
+      let   tgt = resolveTarget(evt);
+      // Forgiveness: in select mode, a near-miss on a line should still select it.
+      if (st.mode === 'select') tgt = pickLineWithTolerance(evt, tgt);
 
       if (st.mode === 'connect') {
         if (!st.drawStart) {

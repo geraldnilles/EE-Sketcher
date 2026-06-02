@@ -277,6 +277,54 @@
     });
   }
 
+  /**
+   * distancePointToSegment(px, py, x1, y1, x2, y2)
+   * Perpendicular distance from (px,py) to the line segment (x1,y1)-(x2,y2),
+   * in SVG user units.  For axis-aligned (ortho) segments, this collapses to
+   * the simple |Δ| form, which is what we need.
+   */
+  function distancePointToSegment(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len2 = dx * dx + dy * dy;
+    if (len2 === 0) {
+      // Degenerate zero-length segment
+      const ex = px - x1, ey = py - y1;
+      return Math.sqrt(ex * ex + ey * ey);
+    }
+    // For purely-ortho segments (which is all we draw) this is exact; in the
+    // general case this is the squared projection parameter clamped to [0,1].
+    let t = ((px - x1) * dx + (py - y1) * dy) / len2;
+    if (t < 0) t = 0; else if (t > 1) t = 1;
+    const cx = x1 + t * dx, cy = y1 + t * dy;
+    const ex = px - cx, ey = py - cy;
+    return Math.sqrt(ex * ex + ey * ey);
+  }
+
+  /**
+   * findLineNearPoint(px, py, tolerance)
+   * Returns the closest .net-line whose perpendicular distance to (px,py)
+   * is <= tolerance, or null if none qualify.  Tolerance is in SVG user
+   * units, so it scales with zoom (giving tighter hits when zoomed in,
+   * which matches user expectations).
+   */
+  function findLineNearPoint(px, py, tolerance) {
+    const layer = document.getElementById('nets-layer');
+    if (!layer) return null;
+    const lines = layer.querySelectorAll('line.net-line');
+    let best = null;
+    let bestDist = Infinity;
+    for (const ln of lines) {
+      const x1 = +ln.getAttribute('x1'), y1 = +ln.getAttribute('y1');
+      const x2 = +ln.getAttribute('x2'), y2 = +ln.getAttribute('y2');
+      const d = distancePointToSegment(px, py, x1, y1, x2, y2);
+      if (d <= tolerance && d < bestDist) {
+        bestDist = d;
+        best = ln;
+      }
+    }
+    return best;
+  }
+
   // Expose
   global.createLine        = createLine;
   global.deleteLine        = deleteLine;
@@ -286,4 +334,5 @@
   global.setEndpoint       = setEndpoint;
   global.shiftLineForEndpointDrag = shiftLineForEndpointDrag;
   global.isOrtho           = isOrtho;
+  global.findLineNearPoint  = findLineNearPoint;
 })(typeof window !== 'undefined' ? window : globalThis);

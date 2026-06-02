@@ -168,7 +168,7 @@
     } else {
       // Plain wheel = pan.  Trackpads deliver small deltaY frequently;
       // mice deliver large deltas rarely.  We use the raw pixel delta.
-      panByPixels(-evt.deltaX, -evt.deltaY);
+      panByPixels(evt.deltaX, evt.deltaY);
     }
   }
 
