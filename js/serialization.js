@@ -53,7 +53,7 @@
     });
     // Snap component transforms
     root.querySelectorAll('g.generic-component').forEach((g) => {
-      const m = /translate\(\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\)/.exec(g.getAttribute('transform') || '');
+      const m = /translate\(\s*(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)\s*\)/.exec(g.getAttribute('transform') || '');
       if (m) {
         g.setAttribute('transform', `translate(${global.snap(+m[1])} ${global.snap(+m[2])})`);
       }
@@ -117,13 +117,13 @@
       nets = netsG; components = compG; junctions = jG;
     }
 
-    // Components: each must have a rect.component-body + 2 pin text per row
+    // Components: each must have a rect.component-body; pin text rows are
+    // recovered from the DOM if data-rows is missing or < 1.  Off-grid
+    // widths (not multiples of 50) and non-grid coordinates are silently
+    // snapped by snapImportedCoords() below — not rejected.
     svg.querySelectorAll('g.generic-component').forEach((g) => {
       const rect = g.querySelector('rect.component-body');
       if (!rect) throw new Error('Imported component missing <rect class="component-body">');
-      // width must be multiple of 50
-      const w = +rect.getAttribute('width');
-      if (w % 50 !== 0) throw new Error('Imported component has width not a multiple of 50: ' + w);
       const rows = parseInt(g.getAttribute('data-rows') || '0', 10);
       if (rows < 1) {
         // Try to recover from existing pin texts
@@ -133,12 +133,13 @@
       }
     });
 
-    // Net lines: ortho & integer coords
+    // Net lines: zero-length is unrecoverable. Non-orthogonal lines are
+    // salvaged by snapImportedCoords() which forces the line onto the
+    // dominant axis.
     svg.querySelectorAll('line.net-line').forEach((ln) => {
       const x1 = +ln.getAttribute('x1'), y1 = +ln.getAttribute('y1');
       const x2 = +ln.getAttribute('x2'), y2 = +ln.getAttribute('y2');
       if (x1 === x2 && y1 === y2) throw new Error('Imported line is zero-length.');
-      if (x1 !== x2 && y1 !== y2) throw new Error('Imported line is not orthogonal.');
     });
 
     return svg;

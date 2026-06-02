@@ -15,20 +15,20 @@ Establish the directory layout and empty file shells described in §5.1 of
 `SPEC.md`. Each file exists at this point but contains only minimal stubs so
 that `index.html` can load them in dependency order without 404s.
 
-- [ ] Create the project directory tree:
+- [x] Create the project directory tree:
       `index.html`, `styles.css`, and `js/`
-- [ ] Create `js/state.js` (stub: `appState` + `setMode()`)
-- [ ] Create `js/components.js` (stub: empty module)
-- [ ] Create `js/nets.js` (stub: empty module)
-- [ ] Create `js/interactions.js` (stub: empty module)
-- [ ] Create `js/sidebar.js` (stub: empty module)
-- [ ] Create `js/serialization.js` (stub: empty module)
-- [ ] Create `js/main.js` (stub: `DOMContentLoaded` listener)
-- [ ] Author `index.html` with `<head>`, `<link rel="stylesheet" href="styles.css">`,
+- [x] Create `js/state.js` (stub: `appState` + `setMode()`)
+- [x] Create `js/components.js` (stub: empty module)
+- [x] Create `js/nets.js` (stub: empty module)
+- [x] Create `js/interactions.js` (stub: empty module)
+- [x] Create `js/sidebar.js` (stub: empty module)
+- [x] Create `js/serialization.js` (stub: empty module)
+- [x] Create `js/main.js` (stub: `DOMContentLoaded` listener)
+- [x] Author `index.html` with `<head>`, `<link rel="stylesheet" href="styles.css">`,
       and `<script>` tags in dependency order at the end of `<body>`:
       `state.js` → `components.js` → `nets.js` → `interactions.js` →
       `sidebar.js` → `serialization.js` → `main.js` (all with `defer`)
-- [ ] Add the three required DOM regions to `index.html`:
+- [x] Add the three required DOM regions to `index.html`:
       - A mode-toggle **toolbar** (Select/Edit, Drag, Connection)
       - An interactive **SVG canvas** (`<svg id="canvas">`) with a viewBox
       - A right-hand **sidebar** placeholder (`<aside id="sidebar">`)
@@ -41,14 +41,14 @@ that `index.html` can load them in dependency order without 404s.
 Make the 25-unit grid the foundation of everything. Every coordinate on the
 canvas and inside components must be a multiple of 25.
 
-- [ ] Define a single `GRID = 25` constant in `state.js` (exported on `window`)
+- [x] Define a single `GRID = 25` constant in `state.js` (exported on `window`)
       plus derived helpers `snap(v)`, `toGrid(px)`, `fromGrid(g)`
-- [ ] Set the `<svg>` viewBox to a large, well-defined extent (e.g.
+- [x] Set the `<svg>` viewBox to a large, well-defined extent (e.g.
       `0 0 2000 1500`) and add `preserveAspectRatio="xMidYMid meet"`
-- [ ] Add a `g.grid-overlay` layer at the top of the SVG containing two
+- [x] Add a `g.grid-overlay` layer at the top of the SVG containing two
       `<pattern>` definitions (or pre-rendered `<line>` grid) drawn at 25-unit
       intervals, lighter at every line, slightly darker every 100 units
-- [ ] Implement `pointerToGrid(evt)` in `interactions.js` that converts a
+- [x] Implement `pointerToGrid(evt)` in `interactions.js` that converts a
       `MouseEvent` to a snapped `(x, y)` in grid coordinates using
       `svg.getScreenCTM().inverse()` and `snap()`
 
@@ -59,12 +59,12 @@ canvas and inside components must be a multiple of 25.
 Wire up the three mutually exclusive operating modes through `appState` and
 the toolbar.
 
-- [ ] In `state.js`, define `appState = { mode: 'select', selected: null,
+- [x] In `state.js`, define `appState = { mode: 'select', selected: null,
       drawStart: null }` and `setMode(mode)` which updates `appState.mode`,
       clears `selected` if needed, and dispatches a `modechange` event
-- [ ] Style the three toolbar buttons in `styles.css` with an `.active` class
+- [x] Style the three toolbar buttons in `styles.css` with an `.active` class
       applied when their mode matches `appState.mode`
-- [ ] In `main.js` (or `interactions.js`), bind click handlers on the toolbar
+- [x] In `main.js` (or `interactions.js`), bind click handlers on the toolbar
       buttons to call `setMode('select' | 'drag' | 'connect')`
 
 ---
@@ -74,7 +74,7 @@ the toolbar.
 Build the modular `<g class="generic-component">` per the spec, including the
 exact DOM example with `<rect>` and pin `<text>` elements.
 
-- [ ] In `components.js`, implement `createComponent(x, y, width, rows)`:
+- [x] In `components.js`, implement `createComponent(x, y, width, rows)`:
       - Validate `width % 50 === 0` and `rows >= 1`
       - Build the `<g>` with `transform="translate(x, y)"`, a child
         `<rect x="0" y="-25" width="width" height="(rows + 1) * 25">`, and
@@ -84,16 +84,16 @@ exact DOM example with `<rect>` and pin `<text>` elements.
       - All `<text>` use `dominant-baseline="middle"`, `font-family="sans-serif"`,
         `font-size="12"`
       - Tag the `<g>` with a unique `data-id` for later lookup
-- [ ] Add a default pin-label placeholder (e.g. "L1"/"R1") so the component
+- [x] Add a default pin-label placeholder (e.g. "L1"/"R1") so the component
       is visible immediately
-- [ ] Append the new component to the canvas inside a `g.components` layer
-- [ ] In `main.js`, expose a "Add Component" toolbar button that calls
+- [x] Append the new component to the canvas inside a `g.components` layer
+- [x] In `main.js`, expose a "Add Component" toolbar button that calls
       `createComponent` with a sensible default (`x=100, y=100, width=100, rows=2`)
-- [ ] Implement `updateComponent(el, patch)` to support:
+- [x] Implement `updateComponent(el, patch)` to support:
       - `labelL: string[]`, `labelR: string[]` (length must match `rows`)
       - `addRow()` / `removeRow()` (height adjusts by ±25, new blank pins appended)
       - `expand()` / `contract()` (width adjusts by ±50, right-side `text` x moves)
-- [ ] Implement `deleteComponent(el)`: remove from DOM, clear selection,
+- [x] Implement `deleteComponent(el)`: remove from DOM, clear selection,
       re-run `recomputeJunctions()`
 
 ---
@@ -103,30 +103,30 @@ exact DOM example with `<rect>` and pin `<text>` elements.
 When in Select/Edit mode, clicking an element highlights it and opens a
 contextual sidebar panel.
 
-- [ ] In `interactions.js`, add a single `click` listener on the SVG canvas
+- [x] In `interactions.js`, add a single `click` listener on the SVG canvas
       that:
       - Computes the click target (walk up to `.generic-component` or `.net-line`)
       - Sets `appState.selected` to that element
       - Adds an `.is-selected` class to it (used for highlight styling)
-- [ ] Add CSS for `.is-selected` (e.g. 2px blue outline on the rect, or a
+- [x] Add CSS for `.is-selected` (e.g. 2px blue outline on the rect, or a
       overlay `<rect>` for the component body)
-- [ ] Clicking empty canvas clears selection
-- [ ] In `sidebar.js`, implement `renderSidebar()` which dispatches on
+- [x] Clicking empty canvas clears selection
+- [x] In `sidebar.js`, implement `renderSidebar()` which dispatches on
       `appState.selected`:
       - `null` → show a neutral "Nothing selected" message
       - `.generic-component` → render the **Block Component Settings Panel**
       - `.net-line` → render the **Line Net Settings Panel**
-- [ ] **Component panel** contents (in this order):
+- [x] **Component panel** contents (in this order):
       - A two-column list of `<input type="text">` for each pin row (left
         and right labels). `oninput` updates the corresponding `<text>` node
         directly and live.
       - `+ Row` and `- Row` buttons → `updateComponent(el, { addRow | removeRow })`
       - `Expand` and `Contract` buttons → width ±50
       - `Delete Component` button → `deleteComponent(el)`
-- [ ] **Line net panel** contents:
+- [x] **Line net panel** contents:
       - Read-only metadata: `(x1, y1) → (x2, y2)`
       - `Delete Line` button → `deleteLine(el)`
-- [ ] Re-render the sidebar after any selection change or data mutation so it
+- [x] Re-render the sidebar after any selection change or data mutation so it
       always reflects the current element
 
 ---
@@ -137,21 +137,21 @@ In Drag mode, allow repositioning components and line endpoints. Per the
 spec, nets do **not** rubber-band; they remain fixed and the connection
 visually disconnects.
 
-- [ ] In `interactions.js`, add `pointerdown` on a `.generic-component` while
+- [x] In `interactions.js`, add `pointerdown` on a `.generic-component` while
       in `drag` mode → start a translate drag; track offset in grid units
-- [ ] On `pointermove`, update the component's `transform` to the snapped
+- [x] On `pointermove`, update the component's `transform` to the snapped
       pointer position
-- [ ] On `pointerup`, finalize the transform and call `recomputeJunctions()`
-- [ ] Add `pointerdown` on the endpoint hit-targets of a `.net-line`:
+- [x] On `pointerup`, finalize the transform and call `recomputeJunctions()`
+- [x] Add `pointerdown` on the endpoint hit-targets of a `.net-line`:
       - Use a small invisible `<rect>` or compute the nearest endpoint from
         pointer position (within 12 screen units of an endpoint)
       - Mark which endpoint is being dragged (`'start' | 'end'`)
-- [ ] On `pointermove`, update the dragged endpoint's `x1/y1` or `x2/y2`:
+- [x] On `pointermove`, update the dragged endpoint's `x1/y1` or `x2/y2`:
       - For a horizontal line (`y1 === y2`), dragging the endpoint
         vertically must move **both** endpoints (so the whole line shifts
         along the parallel axis). Same for vertical lines dragged horizontally.
       - Endpoint must always land on a grid intersection
-- [ ] On `pointerup`, snap final position and call `recomputeJunctions()`
+- [x] On `pointerup`, snap final position and call `recomputeJunctions()`
 
 ---
 
@@ -159,22 +159,22 @@ visually disconnects.
 
 Strictly orthogonal, single-segment net drawing via two clicks.
 
-- [ ] In `interactions.js`, on first `click` in `connect` mode:
+- [x] In `interactions.js`, on first `click` in `connect` mode:
       - Record the start point in `appState.drawStart`
       - Create a temporary preview `<line class="net-preview">` element
         with `pointer-events="none"`
-- [ ] On `pointermove`:
+- [x] On `pointermove`:
       - Compute the pointer in grid coords
       - Determine dominant axis: whichever delta is larger, lock the other
         axis to `appState.drawStart`
       - Update the preview line endpoints accordingly
-- [ ] On second `click`:
+- [x] On second `click`:
       - Snap final endpoint, call `createLine(x1, y1, x2, y2)` in `nets.js`
       - Remove the preview line
       - Clear `appState.drawStart`
-- [ ] On `Escape` (or right-click) during draw, cancel and clear the preview
-- [ ] All preview and final line coordinates must be multiples of 25
-- [ ] Reject zero-length lines (start === end) silently
+- [x] On `Escape` (or right-click) during draw, cancel and clear the preview
+- [x] All preview and final line coordinates must be multiples of 25
+- [x] Reject zero-length lines (start === end) silently
 
 ---
 
@@ -183,21 +183,21 @@ Strictly orthogonal, single-segment net drawing via two clicks.
 Implement line creation, deletion, splitting, and the dynamic 3-or-4
 endpoint junction heuristic.
 
-- [ ] In `nets.js`, implement `createLine(x1, y1, x2, y2)`:
+- [x] In `nets.js`, implement `createLine(x1, y1, x2, y2)`:
       - Build a `<line class="net-line" data-id="…">` with `stroke="#000000"`,
         `stroke-width="2"`
       - Append to a `g.nets` layer
       - Call `splitLineAt` against all existing lines to handle T-junctions
       - Call `recomputeJunctions()`
-- [ ] Implement `deleteLine(el)`: remove from DOM, then `recomputeJunctions()`
-- [ ] Implement `splitLineAt(line, x, y)`:
+- [x] Implement `deleteLine(el)`: remove from DOM, then `recomputeJunctions()`
+- [x] Implement `splitLineAt(line, x, y)`:
       - Given the new line's start or end `(x, y)`, find any existing line
         that has this point strictly **in the interior** of its segment
         (i.e. not at either endpoint, but lying on the segment)
       - Replace the target line with two new lines whose shared endpoint is
         `(x, y)`. Preserve the original `data-id` on one of the halves and
         give the new half a fresh id.
-- [ ] Implement `recomputeJunctions()`:
+- [x] Implement `recomputeJunctions()`:
       - Walk every `.net-line` and collect both endpoints
       - Group by coordinate key `"x,y"`
       - For each key with count `=== 3 || === 4`:
@@ -212,7 +212,7 @@ endpoint junction heuristic.
 
 Implement Export/Import of the raw SVG.
 
-- [ ] In `serialization.js`, implement `exportSchema()`:
+- [x] In `serialization.js`, implement `exportSchema()`:
       - Deep-clone the live `<svg>` via `cloneNode(true)`
       - Strip transient layers: any element with class `net-preview`,
         `drag-handle`, `selection-ring`, etc.
@@ -220,7 +220,7 @@ Implement Export/Import of the raw SVG.
         with import)
       - Serialize via `XMLSerializer.serializeToString`
       - Return the string
-- [ ] Implement `importSchema(text)`:
+- [x] Implement `importSchema(text)`:
       - Wipe `g.components`, `g.nets`, and `g.junctions`
       - Parse with `DOMParser` (`image/svg+xml`)
       - Validate: `<svg>` root, every `.generic-component` has required
@@ -229,15 +229,15 @@ Implement Export/Import of the raw SVG.
         listener — they are picked up automatically)
       - Run `recomputeJunctions()`
       - Clear `appState.selected`
-- [ ] In the DOM (sidebar footer or layout bottom), add:
+- [x] In the DOM (sidebar footer or layout bottom), add:
       - `<textarea id="data-portal" rows="10">`
       - `<button id="export-btn">Export Schema</button>`
       - `<button id="import-btn">Import Schema</button>`
-- [ ] Wire Export button: call `exportSchema()`, set `textarea.value` to the
+- [x] Wire Export button: call `exportSchema()`, set `textarea.value` to the
       result
-- [ ] Wire Import button: call `importSchema(textarea.value)`, then refresh
+- [x] Wire Import button: call `importSchema(textarea.value)`, then refresh
       the sidebar
-- [ ] Style the textarea and buttons in `styles.css` (monospace, full width,
+- [x] Style the textarea and buttons in `styles.css` (monospace, full width,
       fixed height, scrollable)
 
 ---
@@ -246,17 +246,17 @@ Implement Export/Import of the raw SVG.
 
 Make the editor feel like a real tool, not a debug page.
 
-- [ ] In `styles.css`:
+- [x] In `styles.css`:
       - Three-column layout: toolbar (left), canvas (center), sidebar (right)
       - Data Portal docked to the bottom of the sidebar
       - Mode-toggle button group with clear active/inactive states
       - `.is-selected` highlight using a non-destructive overlay
-- [ ] Set the canvas background to a faint grid color and the SVG body
+- [x] Set the canvas background to a faint grid color and the SVG body
       background to white
-- [ ] Use CSS variables for the color palette to keep theming consistent
-- [ ] Ensure cursor changes per mode (`default` in Select, `grab/grabbing`
+- [x] Use CSS variables for the color palette to keep theming consistent
+- [x] Ensure cursor changes per mode (`default` in Select, `grab/grabbing`
       in Drag, `crosshair` in Connect)
-- [ ] Add hover affordance: when hovering an element in Select mode, show
+- [x] Add hover affordance: when hovering an element in Select mode, show
       a subtle outline so users know it's clickable
 
 ---
@@ -265,27 +265,27 @@ Make the editor feel like a real tool, not a debug page.
 
 Catch the failure modes the spec implies but doesn't enumerate.
 
-- [ ] Contract width below 50 is prevented; button is disabled
-- [ ] `- Row` is disabled when `rows === 1`
-- [ ] Deleting a component or line never leaves stale `data-id` references
+- [x] Contract width below 50 is prevented; button is disabled
+- [x] `- Row` is disabled when `rows === 1`
+- [x] Deleting a component or line never leaves stale `data-id` references
       in the sidebar
-- [ ] Importing malformed XML shows a visible error in the Data Portal area
+- [x] Importing malformed XML shows a visible error in the Data Portal area
       and leaves the existing canvas untouched
-- [ ] Importing SVG text with off-grid coordinates snaps the offending
+- [x] Importing SVG text with off-grid coordinates snaps the offending
       values to the nearest grid intersection (or rejects with an error —
       pick one and document it)
-- [ ] Rapid double-clicks in Connect mode don't create duplicate zero-length
+- [x] Rapid double-clicks in Connect mode don't create duplicate zero-length
       lines
-- [ ] Resizing the browser window does not break the grid overlay alignment
-- [ ] Page can be opened with `file://` (double-click `index.html`) and works
+- [x] Resizing the browser window does not break the grid overlay alignment
+- [x] Page can be opened with `file://` (double-click `index.html`) and works
       fully — no `fetch`, no modules requiring a server
 
 ## Phase 11 — Finalization
 
-- [ ] Remove any leftover debug logging
-- [ ] Confirm `.gitignore` covers `.bash_agent_tmp/` and `*.tmp`
-- [ ] Update `README.md` (if present) with a one-paragraph "how to run"
-- [ ] Commit with a descriptive message: e.g. `Initial implementation of
+- [x] Remove any leftover debug logging
+- [x] Confirm `.gitignore` covers `.bash_agent_tmp/` and `*.tmp`
+- [x] Update `README.md` (if present) with a one-paragraph "how to run"
+- [x] Commit with a descriptive message: e.g. `Initial implementation of
       EE-Sketcher per SPEC.md`
 
 ---

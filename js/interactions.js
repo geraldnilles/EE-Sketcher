@@ -142,14 +142,10 @@
         return;
       }
 
-      if (st.mode === 'connect') {
-        if (!st.drawStart) {
-          const gp = pointerToGrid(evt);
-          st.drawStart = { x: gp.x, y: gp.y };
-          drawPreview(gp.x, gp.y, gp.x, gp.y);
-        }
-        return;
-      }
+      // Connect-mode drawing is handled entirely in the 'click' handler below,
+      // which fires once per logical click. We deliberately do nothing in
+      // pointerdown for 'connect' to avoid racing with click and clobbering
+      // appState.drawStart.
     });
 
     function endDrag() {

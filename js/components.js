@@ -177,6 +177,13 @@
     }
 
     if (global.recomputeJunctions) global.recomputeJunctions();
+
+    // If this component is currently selected, ask the sidebar to re-render
+    // so the +/- Row and Expand/Contract buttons reflect the new state
+    // (disabled flags are computed at render time).
+    if (global.appState && global.appState.selected === el) {
+      global.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: el } }));
+    }
   }
 
   function makePin(side, row, x) {
@@ -219,7 +226,7 @@
 
   /** Read the absolute top-left pin origin (in SVG units) of a component. */
   function readOrigin(el) {
-    const m = /translate\(\s*(-?\d+)\s+(-?\d+)\s*\)/.exec(el.getAttribute('transform') || '');
+    const m = /translate\(\s*(-?\d+)\s*,?\s*(-?\d+)\s*\)/.exec(el.getAttribute('transform') || '');
     if (m) return { x: parseInt(m[1], 10), y: parseInt(m[2], 10) };
     return { x: 0, y: 0 };
   }
