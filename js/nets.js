@@ -181,6 +181,76 @@
     if (x1 === x2 && y1 === y2) return null;       // zero-length
     if (!isOrtho(x1, y1, x2, y2)) return null;      // enforce ortho
 
+    // ----- "Extend" feature for connect mode -----
+    // If either endpoint of the proposed segment is the FREE endpoint
+    // of an existing collinear line, we absorb the new segment into
+    // that existing line instead of creating a brand-new one.  This
+    // is the "extend" UX: drawing a line off the end of an existing
+    // line simply lengthens the existing line.
+    //
+    // We must check both endpoints BEFORE the overlap validator runs,
+    // because the validator would otherwise (correctly) reject the new
+    // line for overlapping the existing free endpoint.  The semantics
+    // we want is: "yes, I know I overlap, the user means to extend."
+    //
+    // Two sub-cases:
+    //   - both endpoints absorb into two different existing lines:
+    //       bridge them, then mergeLines() collapses them into one
+    //   - one endpoint absorbs: extend that line, no new segment
+    //   - neither absorbs: fall through to the normal create path
+    const extStart = findFreeCollinearExtension(x1, y1, x2, y2);
+    const extEnd   = findFreeCollinearExtension(x2, y2, x1, y1);
+
+    if (extStart && extEnd && extStart.line === extEnd.line) {
+      // Pathological: a single line claims both endpoints of the new
+      // segment as its own free endpoints.  That would mean the new
+      // segment is identical to the line, which we already reject
+      // (zero-length / overlap).  Just no-op.
+      return null;
+    }
+
+    if (extStart && extEnd) {
+      // Two different existing lines to bridge.  Extend each one to
+      // the opposite end of the new segment, then mergeLines() will
+      // fold the two now-touching segments into one.
+      extendLineTo(extStart.line, extStart.side, x2, y2);
+      extendLineTo(extEnd.line,   extEnd.side,   x1, y1);
+      const n = mergeLines();
+      recomputeJunctions();
+      // Notify the sidebar in case either line was selected.
+      global.dispatchEvent(new CustomEvent('selection-change', {
+        detail: { selected: global.appState.selected }
+      }));
+      if (n > 0) {
+        // Return the surviving merged line so callers (e.g. click
+        // handler) can still highlight it if desired.
+        return null; // callers don't actually use the return; we
+                      // changed existing DOM, not created a new one.
+      }
+      return null;
+    }
+
+    if (extStart) {
+      // Just extend the one line; the new segment is fully absorbed.
+      extendLineTo(extStart.line, extStart.side, x2, y2);
+      // After extending, the touching point (x1,y1) is no longer a
+      // free endpoint of the existing line, so no merge can happen.
+      recomputeJunctions();
+      global.dispatchEvent(new CustomEvent('selection-change', {
+        detail: { selected: global.appState.selected }
+      }));
+      return extStart.line;
+    }
+
+    if (extEnd) {
+      extendLineTo(extEnd.line, extEnd.side, x1, y1);
+      recomputeJunctions();
+      global.dispatchEvent(new CustomEvent('selection-change', {
+        detail: { selected: global.appState.selected }
+      }));
+      return extEnd.line;
+    }
+
     // Reject if the new line would overlap an existing net or a
     // component rect/border.  The product spec says overlap is never
     // allowed; only orthogonal crossings and T-junction terminations
@@ -203,15 +273,26 @@
     ln.appendChild(newEndpointHit(ln, 'start'));
     ln.appendChild(newEndpointHit(ln, 'end'));
 
+    // Heal: a freshly-created line can sit exactly on top of an
+    // existing free endpoint.  After splits, the new line's endpoint
+    // has count >= 2 (the new line + whatever was there).  If exactly
+    // 2 and the existing line is collinear, merge them.  We always run
+    // mergeLines() to be safe — it is a no-op when there is nothing to
+    // merge.
+    mergeLines();
     recomputeJunctions();
     return ln;
   }
 
-  /** deleteLine(lineEl) — remove from DOM, then recompute junctions. */
+  /** deleteLine(lineEl) — remove from DOM, heal any orphan splits, recompute junctions. */
   function deleteLine(lineEl) {
     if (!lineEl) return;
     if (lineEl === global.appState.selected) global.appState.selected = null;
     lineEl.remove();
+    // Heal: deleting a line can drop a coord from 3 endpoints to 2
+    // (a T-junction becoming a plain butt-join).  The heal pass
+    // detects that and merges the two surviving collinear segments.
+    mergeLines();
     recomputeJunctions();
     global.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: null } }));
   }
@@ -455,11 +536,379 @@
     return best;
   }
 
+
+  /* =====================================================================
+     Line merge / extension logic
+     --------------------------------------------------------------------
+     Heuristic: any grid coord with exactly 2 line endpoints coming from
+     2 different lines is a "mergeable" junction — UNLESS one of those
+     lines is horizontal and the other vertical, in which case it's a
+     T-junction that must be preserved.
+
+     The merge step is purely stateless: we look at the current DOM, find
+     all mergeable pairs, apply them, then loop until no more merges are
+     possible.  The same predicate that drives the heal-after-delete
+     behaviour also powers the "extend" feature in connect mode: at create
+     time we ask "is the proposed endpoint the FREE endpoint of an
+     existing collinear line?" and if so we extend the existing line
+     instead of creating a new segment.
+
+     This keeps the wire topology clean: 2 collinear segments that meet
+     end-to-end become 1 segment, and drawing a new line off the end of
+     an existing line just lengthens the existing one.
+     ===================================================================== */
+
+  /**
+   * Build a map: coord-string "{x},{y}" -> array of { line, side }
+   *   side is 'start' or 'end' (the endpoint role in the line).
+   * Reads directly from the DOM, so the result is always in sync with
+   * the actual current state.
+   */
+  function buildEndpointMap() {
+    const layer = document.getElementById('nets-layer');
+    const map = new Map();
+    if (!layer) return map;
+    layer.querySelectorAll('line.net-line').forEach((ln) => {
+      const x1 = +ln.getAttribute('x1'), y1 = +ln.getAttribute('y1');
+      const x2 = +ln.getAttribute('x2'), y2 = +ln.getAttribute('y2');
+      // Skip degenerate zero-length lines defensively
+      if (x1 === x2 && y1 === y2) return;
+      const k1 = endpointsKey(x1, y1);
+      if (!map.has(k1)) map.set(k1, []);
+      map.get(k1).push({ line: ln, side: 'start' });
+      const k2 = endpointsKey(x2, y2);
+      if (!map.has(k2)) map.set(k2, []);
+      map.get(k2).push({ line: ln, side: 'end' });
+    });
+    return map;
+  }
+
+  /**
+   * Are two line references mutually collinear? Returns true if both
+   * lines are horizontal at the same y, or both vertical at the same x.
+   * Two lines whose only shared coord is at one of their endpoints, and
+   * which lie on the same axis, are mergeable at that shared coord.
+   */
+  function isCollinearPair(lineA, lineB) {
+    const a = readLineCoords(lineA);
+    const b = readLineCoords(lineB);
+    const aHoriz = (a.y1 === a.y2);
+    const aVert  = (a.x1 === a.x2);
+    const bHoriz = (b.y1 === b.y2);
+    const bVert  = (b.x1 === b.x2);
+    if (aHoriz && bHoriz && a.y1 === b.y1) return true;
+    if (aVert  && bVert  && a.x1 === b.x1) return true;
+    return false;
+  }
+
+  /**
+   * Move the hit-rect associated with `which` endpoint of `line` to
+   * the new (x, y).  Hit-rects are 14x14 transparent rects that act as
+   * enlarged click targets for endpoint dragging.
+   */
+  function moveHitRect(line, which, x, y) {
+    const hit = line.querySelector(`rect.endpoint-hit[data-endpoint="${which}"]`);
+    if (!hit) return;
+    const SIZE = 14;
+    hit.setAttribute('x', String(x - SIZE / 2));
+    hit.setAttribute('y', String(y - SIZE / 2));
+  }
+
+  /**
+   * Extend one endpoint of `line` to the new (x, y).  Updates both the
+   * line's coordinates and the matching endpoint hit-rect.
+   */
+  function extendLineTo(line, which, x, y) {
+    if (which === 'start') {
+      line.setAttribute('x1', String(x));
+      line.setAttribute('y1', String(y));
+    } else {
+      line.setAttribute('x2', String(x));
+      line.setAttribute('y2', String(y));
+    }
+    moveHitRect(line, which, x, y);
+  }
+
+  /**
+   * Coordinates of a line's given endpoint.
+   */
+  function endpointCoord(line, side) {
+    if (side === 'start') {
+      return { x: +line.getAttribute('x1'), y: +line.getAttribute('y1') };
+    }
+    return { x: +line.getAttribute('x2'), y: +line.getAttribute('y2') };
+  }
+
+  /**
+   * Coordinates of a line's *opposite* endpoint (i.e. the one we want
+   * to keep when merging — the line's far end).
+   */
+  function oppositeCoord(line, side) {
+    return endpointCoord(line, side === 'start' ? 'end' : 'start');
+  }
+
+  /**
+   * isButtJoin(coordKey, lineA, sideA, lineB, sideB)
+   * Returns true if the two lines meet at `coordKey` end-to-end in
+   * a butt-join: each line's chosen endpoint sits AT coordKey, and
+   * each line's OTHER endpoint is on the OPPOSITE side of coordKey
+   * (so the two lines extend in opposite directions from the joint).
+   *
+   * This is the only safe configuration for a single coord with
+   * exactly 2 endpoints from 2 different collinear lines.  If both
+   * other endpoints were on the same side, the two lines would
+   * overlap (or be identical) -- a state the validator would have
+   * rejected; the first pass of mergeLines() must not silently
+   * produce a degenerate shorter line as a side effect.
+   */
+  function isButtJoin(lineA, sideA, lineB, sideB) {
+    const a = endpointCoord(lineA, sideA);
+    const b = endpointCoord(lineB, sideB);
+    if (a.x !== b.x || a.y !== b.y) return false;
+    const aFar = oppositeCoord(lineA, sideA);
+    const bFar = oppositeCoord(lineB, sideB);
+    if (a.y === aFar.y && a.y === bFar.y) {
+      const aDelta = aFar.x - a.x;
+      const bDelta = bFar.x - a.x;
+      if (aDelta === 0 || bDelta === 0) return false;
+      return (aDelta < 0) !== (bDelta < 0);
+    }
+    if (a.x === aFar.x && a.x === bFar.x) {
+      const aDelta = aFar.y - a.y;
+      const bDelta = bFar.y - a.y;
+      if (aDelta === 0 || bDelta === 0) return false;
+      return (aDelta < 0) !== (bDelta < 0);
+    }
+    return false;
+  }
+
+  /**
+   * mergeOnePair(surviving, survivingSide, dead, deadSide)
+   *   surviving : the line that will absorb the other one
+   *   survivingSide : which endpoint of `surviving` to extend
+   *   dead : the line that will be removed
+   *   deadSide : which endpoint of `dead` is touching the surviving
+   *              line (its far endpoint stays put, the touching one
+   *              is what's shared and effectively "disappears")
+   *
+   * The surviving line is extended so that its `survivingSide` endpoint
+   * moves to the FAR endpoint of `dead`.  The dead line is then
+   * removed.  Selection is preserved: if the user had the dead line
+   * selected, selection transfers to the surviving line.
+   */
+  function mergeOnePair(surviving, survivingSide, dead, deadSide) {
+    // The far endpoint of the dead line becomes the new position of
+    // surviving's chosen endpoint.
+    const far = oppositeCoord(dead, deadSide);
+
+    // The shared coord (the one the two lines were meeting at) should
+    // equal the touching endpoint of the dead line and the touching
+    // endpoint of the surviving line.  We assert that here to keep
+    // the caller honest.
+    const sharedDead = endpointCoord(dead, deadSide);
+    const sharedSurv = endpointCoord(surviving, survivingSide);
+    if (sharedDead.x !== sharedSurv.x || sharedDead.y !== sharedSurv.y) {
+      // The two "touching" endpoints aren't actually co-located.  This
+      // is a precondition violation; bail without mutation.
+      return false;
+    }
+
+    extendLineTo(surviving, survivingSide, far.x, far.y);
+
+    // If the dead line was selected, transfer selection to surviving
+    if (global.appState && global.appState.selected === dead) {
+      global.appState.selected = surviving;
+    }
+    if (dead.parentNode) dead.parentNode.removeChild(dead);
+    return true;
+  }
+
+  /**
+   * mergeLines()
+   * Stateless pass: scan every coord, look for exactly 2 endpoints
+   * coming from 2 different lines that are collinear, and merge them.
+   * Loops until no more merges can be performed (a single merge can
+   * open up new merge opportunities at adjacent coords).
+   *
+   * Returns the total number of merges performed.
+   */
+  /**
+   * coalesceCollinearOverlap()
+   * Finds two collinear lines whose interiors overlap with positive
+   * length (e.g. (100,100)→(300,100) and (200,100)→(400,100) overlap
+   * on (200,300)) and replaces them with a single line that spans
+   * the outer envelope (100,100)→(400,100).  This is what naturally
+   * happens during the "bridge" extension in connect mode: when the
+   * new line extends two existing lines into each other, the two
+   * surviving lines now overlap, and we need to fold them together.
+   *
+   * Returns true if a coalesce was performed (caller should loop).
+   */
+  function coalesceCollinearOverlap() {
+    console.log('[COALESCE] called');
+    const layer = document.getElementById('nets-layer');
+    if (!layer) return false;
+    const lines = Array.from(layer.querySelectorAll('line.net-line'));
+    for (let i = 0; i < lines.length; i++) {
+      const a = lines[i];
+      const aC = readLineCoords(a);
+      if (aC.x1 === aC.x2 && aC.y1 === aC.y2) continue; // skip zero-length
+      const aHoriz = (aC.y1 === aC.y2);
+      const aVert  = (aC.x1 === aC.x2);
+      if (!aHoriz && !aVert) continue; // not ortho; skip
+      for (let j = i + 1; j < lines.length; j++) {
+        const b = lines[j];
+        const bC = readLineCoords(b);
+        if (bC.x1 === bC.x2 && bC.y1 === bC.y2) continue;
+        if (aHoriz) {
+          if (bC.y1 !== bC.y2) continue; // not horizontal
+          if (aC.y1 !== bC.y1) continue; // different row
+          // Positive-length overlap on x?
+          const aLo = Math.min(aC.x1, aC.x2), aHi = Math.max(aC.x1, aC.x2);
+          const bLo = Math.min(bC.x1, bC.x2), bHi = Math.max(bC.x1, bC.x2);
+          console.log('[COALESCE] j='+j+' bC='+JSON.stringify(bC)+' aHi='+aHi+' bLo='+bLo+' bHi='+bHi+' aLo='+aLo);
+          if (aHi <= bLo || bHi <= aLo) continue; // not overlapping
+          // They overlap with positive length.  Compute the outer envelope.
+          const newX1 = Math.min(aLo, bLo);
+          const newX2 = Math.max(aHi, bHi);
+          // Transfer selection if needed.
+          if (global.appState && global.appState.selected === b) {
+            global.appState.selected = a;
+          }
+          // Apply: keep `a`, extend it to the envelope, remove `b`.
+          // Determine which side of `a` needs extending.
+          const aExtStart = (newX1 < aLo);
+          const aExtEnd   = (newX2 > aHi);
+          console.log('[COALESCE] MERGE: newX1='+newX1+' newX2='+newX2+' aExtStart='+aExtStart+' aExtEnd='+aExtEnd);
+          if (aExtStart) extendLineTo(a, 'start', newX1, aC.y1);
+          if (aExtEnd)   extendLineTo(a, 'end',   newX2, aC.y1);
+          if (b.parentNode) b.parentNode.removeChild(b);
+          return true;
+        } else {
+          // a is vertical
+          if (bC.x1 !== bC.x2) continue;
+          if (aC.x1 !== bC.x1) continue;
+          const aLo = Math.min(aC.y1, aC.y2), aHi = Math.max(aC.y1, aC.y2);
+          const bLo = Math.min(bC.y1, bC.y2), bHi = Math.max(bC.y1, bC.y2);
+          if (aHi <= bLo || bHi <= aLo) continue;
+          const newY1 = Math.min(aLo, bLo);
+          const newY2 = Math.max(aHi, bHi);
+          if (global.appState && global.appState.selected === b) {
+            global.appState.selected = a;
+          }
+          const aExtStart = (newY1 < aLo);
+          const aExtEnd   = (newY2 > aHi);
+          if (aExtStart) extendLineTo(a, 'start', aC.x1, newY1);
+          if (aExtEnd)   extendLineTo(a, 'end',   aC.x1, newY2);
+          if (b.parentNode) b.parentNode.removeChild(b);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function mergeLines() {
+    console.log('[MERGE] called');
+    let totalMerges = 0;
+    // Bound the loop defensively in case of a bug that creates a
+    // cycle.  In normal operation this loop runs 0-2 times.
+    for (let safety = 0; safety < 10000; safety++) {
+      const map = buildEndpointMap();
+      let didMerge = false;
+
+      console.log('[MERGE] first pass, map:', JSON.stringify(Array.from(map.entries()).map(([k,v]) => ({k, count: v.length, sides: v.map(e => e.side)}))));
+      // Pass 1: heal butt-joins.  Two collinear lines sharing a
+      // single endpoint coord (and no other line touches that
+      // coord) get merged.
+      const keys = Array.from(map.keys()).sort();
+      for (const k of keys) {
+        const entries = map.get(k);
+        if (entries.length !== 2) continue;
+        const a = entries[0], b = entries[1];
+        if (a.line === b.line) continue;          // a line's own 2 endpoints
+        if (!isCollinearPair(a.line, b.line)) continue;
+
+        // Choose which line to keep.  Prefer the older (earlier in
+        // DOM) one so the surviving id is stable for users.
+        const aFirst = !b.line.compareDocumentPosition(a.line) ||
+                       !(b.line.compareDocumentPosition(a.line) & Node.DOCUMENT_POSITION_FOLLOWING);
+        const keep = aFirst ? a : b;
+        const drop = aFirst ? b : a;
+
+        console.log('[MERGE] first pass: BUTT-JOIN matched, merging');
+        if (mergeOnePair(keep.line, keep.side, drop.line, drop.side)) {
+          didMerge = true;
+          totalMerges++;
+          break; // restart the outer loop with a fresh map
+        }
+      }
+
+      if (didMerge) continue;
+
+      // Pass 2: coalesce collinear overlap.  Two collinear lines
+      // whose interiors overlap (positive length) get folded into
+      // one line spanning the outer envelope.  This is what fires
+      // after a "bridge" extension produces overlapping lines.
+      console.log('[MERGE] trying coalesceCollinearOverlap');
+      if (coalesceCollinearOverlap()) {
+        totalMerges++;
+        continue;
+      }
+
+      break;
+    }
+    return totalMerges;
+  }
+
+  /**
+   * findFreeCollinearExtension(x, y, farX, farY)
+   * Returns { line, side, farX, farY } describing how to extend an
+   * existing line if (x, y) is the FREE endpoint of an existing
+   * collinear line, OR null if no such extension applies.
+   *
+   * "Free endpoint" means the coord (x, y) is one of the line's
+   * endpoints AND that coord has exactly ONE line endpoint
+   * terminating on it (i.e. count == 1 in the endpoint map, so it
+   * is not a T-junction or junction dot).
+   *
+   * `farX, farY` is the OPPOSITE endpoint of the new line; the
+   * returned `farX, farY` is the new coord to extend the line to.
+   */
+  function findFreeCollinearExtension(x, y, farX, farY) {
+    const map = buildEndpointMap();
+    const k = endpointsKey(x, y);
+    const entries = map.get(k);
+    if (!entries || entries.length !== 1) return null; // not a free endpoint
+    const ref = entries[0];
+    const line = ref.line;
+    // The line at this coord must be collinear with the direction
+    // from (x,y) to (farX,farY).  For an axis-aligned line and a
+    // axis-aligned new segment, that means the line lies on the same
+    // row or column as the new segment.
+    const lc = readLineCoords(line);
+    if (lc.y1 === lc.y2) {
+      // existing line is horizontal; new segment must also be horizontal at the same y
+      if (y !== lc.y1) return null;
+      if (farY !== y) return null;
+    } else if (lc.x1 === lc.x2) {
+      // existing line is vertical; new segment must also be vertical at the same x
+      if (x !== lc.x1) return null;
+      if (farX !== x) return null;
+    } else {
+      return null; // non-ortho line; shouldn't happen
+    }
+    // Extend: the line's `ref.side` endpoint is at (x, y); the new
+    // far position is (farX, farY).
+    return { line: line, side: ref.side, newX: farX, newY: farY };
+  }
+
   // Expose
   global.createLine        = createLine;
   global.deleteLine        = deleteLine;
   global.splitLineAt       = splitLineAt;
   global.recomputeJunctions = recomputeJunctions;
+  global.mergeLines        = mergeLines;
   global.readLineCoords    = readLineCoords;
   global.setEndpoint       = setEndpoint;
   global.shiftLineForEndpointDrag = shiftLineForEndpointDrag;
