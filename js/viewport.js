@@ -164,7 +164,7 @@
     if (evt.ctrlKey || evt.metaKey) {
       // Standard "zoom": deltaY > 0 = zoom out, < 0 = zoom in.
       // Use a smooth exponential mapping.
-      const factor = Math.exp(-evt.deltaY * 0.01);
+      const factor = Math.exp(-evt.deltaY * 0.003);
       zoom(factor, evt.clientX, evt.clientY);
     } else if (evt.shiftKey) {
       // Shift + wheel = horizontal pan only (map the vertical wheel delta to horizontal scroll).
