@@ -174,6 +174,14 @@
     stripTransientLayers(clone);
     stripClasses(clone, TRANSIENT_CLASSES);
     stripState(clone);
+    // Reset the viewBox to the full world on export so the saved SVG is a
+    // self-contained schematic viewable in any tool.  We still keep the
+    // user's current viewBox in a custom data-* attribute so that
+    // importSchema() can restore their zoom/pan on round-trip.
+    const userViewBox = svg.getAttribute('viewBox');
+    if (userViewBox) clone.setAttribute('data-view-box', userViewBox);
+    clone.setAttribute('viewBox', '0 0 2000 1500');
+    clone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     // Add a friendly XML declaration
     const xml = new XMLSerializer().serializeToString(clone);
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + xml;
@@ -256,6 +264,18 @@
 
     // Clear selection
     global.clearSelection();
+
+    // Restore the saved viewBox if the imported SVG carried one, so the user
+    // gets back the exact zoom/pan they had when they exported.  We prefer
+    // our custom 'data-view-box' attribute (set by exportSchema) so that the
+    // SVG's standard 'viewBox' can stay as the full world for portability.
+    const savedVb = svg.getAttribute('data-view-box') || svg.getAttribute('viewBox');
+    if (savedVb && global.setViewBox) {
+      const parts = savedVb.split(/[\s,]+/).map(Number);
+      if (parts.length === 4 && parts.every((n) => Number.isFinite(n))) {
+        global.setViewBox(parts[0], parts[1], parts[2], parts[3]);
+      }
+    }
   }
 
   global.exportSchema = exportSchema;

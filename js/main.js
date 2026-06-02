@@ -37,7 +37,15 @@
     const addBtn = $('add-component-btn');
     if (addBtn) {
       addBtn.addEventListener('click', () => {
-        const g = global.createComponent(100, 100, 100, 2);
+        // Place the new component at the centre of the current viewport (snapped to grid)
+        // so the user always sees what they just added.
+        let _vx = 100, _vy = 100;
+        if (global.getViewBox) {
+          const vb = global.getViewBox();
+          _vx = global.snap(vb.x + vb.w / 2);
+          _vy = global.snap(vb.y + vb.h / 2);
+        }
+        const g = global.createComponent(_vx, _vy, 100, 2);
         if (g) {
           // Auto-select the new component
           document.querySelectorAll('.is-selected').forEach((e) => e.classList.remove('is-selected'));
@@ -96,6 +104,7 @@
     }
 
     /* ---- Initialize subsystems ---- */
+    if (global.initViewport)    global.initViewport();
     if (global.initInteractions) global.initInteractions();
     if (global.initSidebar)     global.initSidebar();
   }
