@@ -232,6 +232,14 @@ input[type="text"]:focus, textarea:focus {
   pointer-events: none;
 }
 
+/* preview line in violation of the no-overlap rule: dashed red, no doubt. */
+.net-preview.invalid {
+  stroke: var(--danger);
+  stroke-dasharray: 4 4;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 1px rgba(220, 38, 38, 0.4));
+}
+
 /* endpoint hit-target for line dragging (transparent, but selectable) */
 .endpoint-hit {
   fill: transparent;

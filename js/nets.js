@@ -44,6 +44,132 @@
     return r;
   }
 
+/* ---------- net-overlap / component-overlap validation ---------- */
+
+  /**
+   * Compute axis-aligned bounding rects of every component in world space.
+   * Returns [{ x, y, w, h, el }, ...]
+   *   rect.x = component origin x
+   *   rect.y = component origin y - 25   (rect is drawn at y=-25 relative to origin)
+   *   rect.w = data-width
+   *   rect.h = (data-rows + 1) * 25
+   */
+  function getComponentRects() {
+    const layer = document.getElementById('components-layer');
+    if (!layer) return [];
+    const out = [];
+    layer.querySelectorAll('g.generic-component').forEach((g) => {
+      const o = global.readOrigin(g);
+      const w = parseInt(g.getAttribute('data-width') || '100', 10);
+      const rows = parseInt(g.getAttribute('data-rows') || '1', 10);
+      out.push({
+        x: o.x,
+        y: o.y - 25,
+        w: w,
+        h: (rows + 1) * 25,
+        el: g,
+      });
+    });
+    return out;
+  }
+
+  /**
+   * Open-interval overlap of two 1D segments [a,b] and [c,d].
+   * Returns true if the segments overlap with strictly-positive length
+   * (i.e. a shared interior point exists).  Equal endpoints are NOT
+   * considered overlap (those are T-junctions and are allowed).
+   */
+  function openOverlap1D(a, b, c, d) {
+    const lo = Math.max(Math.min(a, b), Math.min(c, d));
+    const hi = Math.min(Math.max(a, b), Math.max(c, d));
+    return hi > lo; // strictly positive length
+  }
+
+  /**
+   * Does the proposed new line overlap an existing net colinearly with
+   * positive length?  Orthogonal crossings (one horiz, one vert) are
+   * allowed and return false.  Endpoint-only touches (T-junctions) are
+   * also allowed and return false.
+   *
+   * 'exclude' may be an existing <line> element to skip (e.g. when this
+   * check is being re-run on a line that has just been edited).
+   */
+  function lineOverlapsNet(x1, y1, x2, y2, exclude) {
+    if (x1 !== x2 && y1 !== y2) return false; // not even ortho
+    const layer = document.getElementById('nets-layer');
+    if (!layer) return false;
+    const lines = layer.querySelectorAll('line.net-line');
+    for (const ln of lines) {
+      if (exclude && ln === exclude) continue;
+      const ex1 = +ln.getAttribute('x1'), ey1 = +ln.getAttribute('y1');
+      const ex2 = +ln.getAttribute('x2'), ey2 = +ln.getAttribute('y2');
+      if (y1 === y2 && ey1 === ey2 && y1 === ey1) {
+        // both horizontal, same y
+        if (openOverlap1D(x1, x2, ex1, ex2)) return true;
+      } else if (x1 === x2 && ex1 === ex2 && x1 === ex1) {
+        // both vertical, same x
+        if (openOverlap1D(y1, y2, ey1, ey2)) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Does the proposed new line collide with any component rect?
+   *  - 'Touches the border or interior with positive-length overlap' is
+   *    a violation.  An endpoint landing exactly on a border is allowed
+   *    (this is how a user attaches a wire to a pin).
+   *  - For a horizontal line at y from x1..x2 vs rect (rx,ry,rw,rh):
+   *      - if y is on [ry, ry+rh] AND the x-intervals overlap with
+   *        positive length, then violation.
+   *  - Symmetric for vertical lines.
+   */
+  function lineHitsComponent(x1, y1, x2, y2) {
+    if (x1 !== x2 && y1 !== y2) return false; // non-ortho, can't draw
+    const rects = getComponentRects();
+    for (const r of rects) {
+      const rTop    = r.y;
+      const rBottom = r.y + r.h;
+      const rLeft   = r.x;
+      const rRight  = r.x + r.w;
+      if (y1 === y2) {
+        // horizontal
+        if (y1 >= rTop && y1 <= rBottom) {
+          // y touches or is inside vertical extent of rect
+          if (openOverlap1D(x1, x2, rLeft, rRight)) return true;
+        }
+      } else {
+        // vertical
+        if (x1 >= rLeft && x1 <= rRight) {
+          if (openOverlap1D(y1, y2, rTop, rBottom)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Top-level validator for a freshly-snapped line.  Returns
+   *   { ok: true }                            - all clear
+   *   { ok: false, reason: 'overlap' }        - collinear overlap with existing net
+   *   { ok: false, reason: 'component' }      - overlaps a component rect/border
+   *
+   * The caller is expected to have already snap()'d and ortho-checked
+   * the coordinates.  This function only enforces the "no overlap" rule
+   * described in the product spec.
+   */
+  function validateNewLine(x1, y1, x2, y2, opts) {
+    opts = opts || {};
+    if (lineOverlapsNet(x1, y1, x2, y2, opts.exclude)) {
+      return { ok: false, reason: 'overlap' };
+    }
+    if (lineHitsComponent(x1, y1, x2, y2)) {
+      return { ok: false, reason: 'component' };
+    }
+    return { ok: true };
+  }
+
+
   /**
    * createLine(x1, y1, x2, y2)
    * Snaps to grid, requires ortho and non-zero length.
@@ -55,11 +181,15 @@
     if (x1 === x2 && y1 === y2) return null;       // zero-length
     if (!isOrtho(x1, y1, x2, y2)) return null;      // enforce ortho
 
+    // Reject if the new line would overlap an existing net or a
+    // component rect/border.  The product spec says overlap is never
+    // allowed; only orthogonal crossings and T-junction terminations
+    // are permitted.
+    const valid = validateNewLine(x1, y1, x2, y2);
+    if (!valid.ok) return null;
+
     const layer = document.getElementById('nets-layer');
     if (!layer) return null;
-
-    // Sort endpoints so that x1,y1 is the one closer to origin (helps stability).
-    // (Not strictly required, but reduces duplication during T-splits.)
 
     const ln = newLineEl(x1, y1, x2, y2);
     layer.appendChild(ln);
@@ -335,4 +465,8 @@
   global.shiftLineForEndpointDrag = shiftLineForEndpointDrag;
   global.isOrtho           = isOrtho;
   global.findLineNearPoint  = findLineNearPoint;
+  global.validateNewLine    = validateNewLine;
+  global.lineOverlapsNet    = lineOverlapsNet;
+  global.lineHitsComponent  = lineHitsComponent;
+  global.getComponentRects  = getComponentRects;
 })(typeof window !== 'undefined' ? window : globalThis);

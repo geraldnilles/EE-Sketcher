@@ -92,17 +92,34 @@
     const overlay = document.getElementById('overlay-layer');
     if (overlay) overlay.innerHTML = '';
   }
-  function drawPreview(x1, y1, x2, y2) {
+  function drawPreview(x1, y1, x2, y2, valid) {
     clearPreview();
     const overlay = document.getElementById('overlay-layer');
     if (!overlay) return;
     const ln = document.createElementNS(SVG_NS, 'line');
-    ln.setAttribute('class', 'net-preview');
+    let cls = 'net-preview';
+    if (valid && !valid.ok) cls += ' invalid';
+    ln.setAttribute('class', cls);
     ln.setAttribute('x1', String(x1));
     ln.setAttribute('y1', String(y1));
     ln.setAttribute('x2', String(x2));
     ln.setAttribute('y2', String(y2));
+    if (valid && !valid.ok && valid.reason) {
+      ln.setAttribute('data-violation', valid.reason);
+    }
     overlay.appendChild(ln);
+  }
+
+  /**
+   * Validate a candidate line for the preview.  Returns the
+   * { ok, reason } object from validateNewLine, or { ok: true } if
+   * the validator isn't available or the candidate is zero-length
+   * (so we don't flash red for a degenerate single-point preview).
+   */
+  function previewValidFor(x1, y1, x2, y2) {
+    if (x1 === x2 && y1 === y2) return { ok: true };
+    if (typeof global.validateNewLine !== 'function') return { ok: true };
+    return global.validateNewLine(x1, y1, x2, y2);
   }
 
   /* ----- main init ----- */
@@ -132,7 +149,8 @@
         let x2 = p.x, y2 = p.y;
         if (dx >= dy) y2 = st.drawStart.y;
         else          x2 = st.drawStart.x;
-        drawPreview(st.drawStart.x, st.drawStart.y, x2, y2);
+        const valid = previewValidFor(st.drawStart.x, st.drawStart.y, x2, y2);
+        drawPreview(st.drawStart.x, st.drawStart.y, x2, y2, valid);
       }
     });
 
@@ -199,7 +217,7 @@
         if (!st.drawStart) {
           const gp = pointerToGrid(evt);
           st.drawStart = { x: gp.x, y: gp.y };
-          drawPreview(gp.x, gp.y, gp.x, gp.y);
+          drawPreview(gp.x, gp.y, gp.x, gp.y, { ok: true });
           return;
         }
         const gp = pointerToGrid(evt);
@@ -209,7 +227,18 @@
         if (dx >= dy) y2 = st.drawStart.y;
         else          x2 = st.drawStart.x;
         if (x2 !== st.drawStart.x || y2 !== st.drawStart.y) {
-          global.createLine(st.drawStart.x, st.drawStart.y, x2, y2);
+          // Re-check validity.  If the proposed line would overlap an
+          // existing net or a component rect/border, the click is
+          // silently rejected (no line is drawn) and the in-progress
+          // draw is cleared.
+          const valid = previewValidFor(st.drawStart.x, st.drawStart.y, x2, y2);
+          if (valid.ok) {
+            global.createLine(st.drawStart.x, st.drawStart.y, x2, y2);
+          }
+          // Always cancel the in-progress draw on click 2 (whether the
+          // line was accepted or rejected).  This matches the spec:
+          // "If the user attempts to draw an overapping net, it should
+          // just cancel the operation and not draw any lines."
         }
         st.drawStart = null;
         clearPreview();
