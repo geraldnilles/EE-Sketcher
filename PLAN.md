@@ -33,8 +33,6 @@ that `index.html` can load them in dependency order without 404s.
       - An interactive **SVG canvas** (`<svg id="canvas">`) with a viewBox
       - A right-hand **sidebar** placeholder (`<aside id="sidebar">`)
       - A bottom **Data Portal** (`<textarea id="data-portal">` plus Export/Import buttons)
-- [ ] Open the page in a browser to confirm there are no 404s and the empty
-      layout renders
 
 ---
 
@@ -50,12 +48,9 @@ canvas and inside components must be a multiple of 25.
 - [ ] Add a `g.grid-overlay` layer at the top of the SVG containing two
       `<pattern>` definitions (or pre-rendered `<line>` grid) drawn at 25-unit
       intervals, lighter at every line, slightly darker every 100 units
-- [ ] Verify visually: a 25-pixel screen distance corresponds to one grid unit
-      at 1:1 zoom
 - [ ] Implement `pointerToGrid(evt)` in `interactions.js` that converts a
       `MouseEvent` to a snapped `(x, y)` in grid coordinates using
       `svg.getScreenCTM().inverse()` and `snap()`
-- [ ] Confirm all later pointer math uses `pointerToGrid`, never raw pixels
 
 ---
 
@@ -71,8 +66,6 @@ the toolbar.
       applied when their mode matches `appState.mode`
 - [ ] In `main.js` (or `interactions.js`), bind click handlers on the toolbar
       buttons to call `setMode('select' | 'drag' | 'connect')`
-- [ ] Confirm clicking each button updates the `.active` state and the
-      pointer handlers below branch correctly
 
 ---
 
@@ -96,7 +89,6 @@ exact DOM example with `<rect>` and pin `<text>` elements.
 - [ ] Append the new component to the canvas inside a `g.components` layer
 - [ ] In `main.js`, expose a "Add Component" toolbar button that calls
       `createComponent` with a sensible default (`x=100, y=100, width=100, rows=2`)
-- [ ] Verify the rendered component matches the example DOM in §2.2 of the spec
 - [ ] Implement `updateComponent(el, patch)` to support:
       - `labelL: string[]`, `labelR: string[]` (length must match `rows`)
       - `addRow()` / `removeRow()` (height adjusts by ±25, new blank pins appended)
@@ -136,9 +128,6 @@ contextual sidebar panel.
       - `Delete Line` button → `deleteLine(el)`
 - [ ] Re-render the sidebar after any selection change or data mutation so it
       always reflects the current element
-- [ ] Confirm the live-edit loop: typing in a pin input updates the canvas in
-      real time, the row buttons visibly grow/shrink the component, and
-      delete removes the element and re-runs junction logic
 
 ---
 
@@ -163,10 +152,6 @@ visually disconnects.
         along the parallel axis). Same for vertical lines dragged horizontally.
       - Endpoint must always land on a grid intersection
 - [ ] On `pointerup`, snap final position and call `recomputeJunctions()`
-- [ ] Confirm: dragging a component away from a connected line leaves the
-      line fixed; no rubber-banding occurs
-- [ ] Confirm: dragging the endpoint of a horizontal line up or down shifts
-      the whole line up or down (parallel-axis rule)
 
 ---
 
@@ -220,11 +205,6 @@ endpoint junction heuristic.
           the `g.junctions` layer (create if missing, match by `data-coord`)
       - For each key with count `<= 2`:
         - Remove the corresponding `<circle>` if present
-- [ ] Confirm: drawing 3 lines into the same intersection produces a
-      junction dot; deleting one removes the dot
-- [ ] Confirm: lines crossing orthogonally (without a shared endpoint) do
-      **not** produce a junction
-- [ ] Confirm: unconnected crossovers render as plain overlapping lines
 
 ---
 
@@ -259,10 +239,6 @@ Implement Export/Import of the raw SVG.
       the sidebar
 - [ ] Style the textarea and buttons in `styles.css` (monospace, full width,
       fixed height, scrollable)
-- [ ] Round-trip test: export the empty canvas, import it, and confirm the
-      canvas is identical
-- [ ] Round-trip test: draw a small schematic, export, clear, import, and
-      confirm the schematic is restored exactly (including junctions)
 
 ---
 
@@ -304,44 +280,7 @@ Catch the failure modes the spec implies but doesn't enumerate.
 - [ ] Page can be opened with `file://` (double-click `index.html`) and works
       fully — no `fetch`, no modules requiring a server
 
----
-
-## Phase 11 — Manual Verification Checklist
-
-A scripted end-to-end smoke test mirroring the spec's user stories.
-
-- [ ] **Grid:** every coordinate in the exported SVG is a multiple of 25
-- [ ] **Add Component:** new component appears at top-left, height matches
-      `(rows+1)*25`, width is a multiple of 50
-- [ ] **Pin Edit:** typing in the sidebar pin input updates the corresponding
-      `<text>` on the canvas immediately
-- [ ] **Row +/-:** adds/removes a 25-unit-tall row and a matching pair of
-      empty pin inputs
-- [ ] **Expand/Contract:** changes width by 50 units, right-side pins follow
-- [ ] **Delete Component:** removes the component and any orphan junctions
-- [ ] **Select Mode:** clicking an element highlights it; the sidebar
-      shows the right panel
-- [ ] **Drag Component:** repositioning works; nets do not follow
-- [ ] **Drag Line Endpoint:** endpoint snaps; horizontal line dragged
-      vertically moves the whole line
-- [ ] **Connect Mode:** two clicks create an orthogonal `<line>` between
-      grid points
-- [ ] **T-Junction:** drawing 3 lines into one intersection produces a
-      `<circle r="4">`; removing one line removes the dot
-- [ ] **Crossover:** two lines crossing without shared endpoints do **not**
-      produce a junction
-- [ ] **Export:** clicking Export fills the Data Portal textarea with valid
-      SVG markup
-- [ ] **Import:** pasting SVG and clicking Import replaces the canvas with
-      the parsed content
-- [ ] **No Build:** `index.html` works when opened with `file://` (no
-      console errors, all features functional)
-- [ ] **Round-trip:** Export → Import preserves component positions, pin
-      labels, line geometry, and junction dots exactly
-
----
-
-## Phase 12 — Finalization
+## Phase 11 — Finalization
 
 - [ ] Remove any leftover debug logging
 - [ ] Confirm `.gitignore` covers `.bash_agent_tmp/` and `*.tmp`

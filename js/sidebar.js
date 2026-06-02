@@ -1,0 +1,151 @@
+/* =====================================================================
+   sidebar.js
+   Renders the contextual inspector panel based on appState.selected.
+   Re-renders on 'selection-change' and after data mutations.
+   ===================================================================== */
+(function (global) {
+  'use strict';
+
+  function el(tag, attrs, children) {
+    const n = document.createElement(tag);
+    if (attrs) {
+      for (const k in attrs) {
+        if (k === 'class') n.className = attrs[k];
+        else if (k === 'text') n.textContent = attrs[k];
+        else if (k === 'html') n.innerHTML = attrs[k];
+        else if (k.startsWith('on') && typeof attrs[k] === 'function') {
+          n.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
+        } else if (attrs[k] === true) {
+          n.setAttribute(k, '');
+        } else if (attrs[k] !== false && attrs[k] != null) {
+          n.setAttribute(k, attrs[k]);
+        }
+      }
+    }
+    (children || []).forEach((c) => {
+      if (c == null) return;
+      n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    });
+    return n;
+  }
+
+  function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+  function renderEmpty(body) {
+    clear(body);
+    body.appendChild(el('p', { class: 'muted' }, ['Nothing selected. Click an element on the canvas to edit it.']));
+  }
+
+  function renderComponentPanel(body, g) {
+    clear(body);
+    const labels = global.readLabels(g);
+    const rows   = global.getRows(g);
+    const width  = global.getWidth(g);
+
+    // Pin inputs (two-column grid)
+    const grid = el('div', { class: 'pin-grid' });
+    grid.appendChild(el('div', { class: 'pin-label' }, ['Pin Labels (left / right)']));
+    for (let i = 0; i < rows; i++) {
+      const li = el('input', {
+        type: 'text', value: labels.left[i] || '',
+        'data-side': 'L', 'data-row': String(i),
+        oninput: (e) => {
+          const idx = +e.target.getAttribute('data-row');
+          const newL = labels.left.slice();
+          newL[idx] = e.target.value;
+          global.updateComponent(g, { labelL: newL });
+        },
+      });
+      const ri = el('input', {
+        type: 'text', value: labels.right[i] || '',
+        'data-side': 'R', 'data-row': String(i),
+        oninput: (e) => {
+          const idx = +e.target.getAttribute('data-row');
+          const newR = labels.right.slice();
+          newR[idx] = e.target.value;
+          global.updateComponent(g, { labelR: newR });
+        },
+      });
+      grid.appendChild(li);
+      grid.appendChild(ri);
+    }
+    body.appendChild(grid);
+
+    // Row buttons
+    const rowBtns = el('div', { class: 'btn-row', style: 'margin-bottom: 8px;' }, [
+      el('button', { onclick: () => global.updateComponent(g, { addRow: true }) }, ['+ Row']),
+      el('button', {
+        onclick: () => global.updateComponent(g, { removeRow: true }),
+        disabled: rows <= 1,
+      }, ['- Row']),
+    ]);
+    body.appendChild(rowBtns);
+
+    // Width buttons
+    const widthBtns = el('div', { class: 'btn-row', style: 'margin-bottom: 8px;' }, [
+      el('button', { onclick: () => global.updateComponent(g, { expand: true }) }, ['Expand (+50)']),
+      el('button', {
+        onclick: () => global.updateComponent(g, { contract: true }),
+        disabled: width <= 50,
+      }, ['Contract (-50)']),
+    ]);
+    body.appendChild(widthBtns);
+
+    // Metadata
+    const o = global.readOrigin(g);
+    body.appendChild(el('pre', { class: 'meta' }, [
+      `Position: (${o.x}, ${o.y})   Width: ${width}   Rows: ${rows}`,
+    ]));
+
+    // Delete
+    body.appendChild(el('button', {
+      class: 'danger',
+      style: 'width: 100%; margin-top: 4px;',
+      onclick: () => global.deleteComponent(g),
+    }, ['Delete Component']));
+  }
+
+  function renderLinePanel(body, line) {
+    clear(body);
+    const c = global.readLineCoords(line);
+    body.appendChild(el('pre', { class: 'meta' }, [
+      `Line  (${c.x1}, ${c.y1}) -> (${c.x2}, ${c.y2})\n` +
+      `Length: ${Math.abs(c.x2 - c.x1) + Math.abs(c.y2 - c.y1)}   ` +
+      (c.x1 === c.x2 ? 'Vertical' : (c.y1 === c.y2 ? 'Horizontal' : 'Non-ortho!')),
+    ]));
+    body.appendChild(el('button', {
+      class: 'danger',
+      style: 'width: 100%;',
+      onclick: () => global.deleteLine(line),
+    }, ['Delete Line']));
+  }
+
+  function render() {
+    const body = document.getElementById('inspector-body');
+    if (!body) return;
+    const sel = global.appState.selected;
+    if (!sel) return renderEmpty(body);
+    if (sel.classList && sel.classList.contains('generic-component')) {
+      return renderComponentPanel(body, sel);
+    }
+    if (sel.classList && sel.classList.contains('net-line')) {
+      return renderLinePanel(body, sel);
+    }
+    renderEmpty(body);
+  }
+
+  function init() {
+    window.addEventListener('selection-change', render);
+    // Re-render the inspector when a selected element mutates
+    // (components emit no event by default; we hook updateComponent via
+    // a microtask flag in main.js — but for simplicity, re-render on click)
+    document.addEventListener('click', (evt) => {
+      // After selection change bubbles through interactions.js, render is called.
+      // No extra work needed here.
+    });
+    render();
+  }
+
+  global.renderSidebar = render;
+  global.initSidebar   = init;
+})(typeof window !== 'undefined' ? window : globalThis);
