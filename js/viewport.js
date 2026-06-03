@@ -225,4 +225,6 @@
   global.viewportPanByPixels = panByPixels;
   global.resetView      = resetView;
   global.onViewChange   = onViewChange;
+  global.WORLD_W        = WORLD_W;
+  global.WORLD_H        = WORLD_H;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -178,6 +178,11 @@
   function createLine(x1, y1, x2, y2) {
     x1 = global.snap(x1); y1 = global.snap(y1);
     x2 = global.snap(x2); y2 = global.snap(y2);
+    // Clamp both endpoints to stay within the world bounds.
+    x1 = global.clamp(x1, 0, global.WORLD_W);
+    y1 = global.clamp(y1, 0, global.WORLD_H);
+    x2 = global.clamp(x2, 0, global.WORLD_W);
+    y2 = global.clamp(y2, 0, global.WORLD_H);
     if (x1 === x2 && y1 === y2) return null;       // zero-length
     if (!isOrtho(x1, y1, x2, y2)) return null;      // enforce ortho
 
@@ -427,6 +432,9 @@
   function setEndpoint(line, which, x, y) {
     if (which !== 'start' && which !== 'end') return;
     x = global.snap(x); y = global.snap(y);
+    // Clamp to stay within the world bounds.
+    x = global.clamp(x, 0, global.WORLD_W);
+    y = global.clamp(y, 0, global.WORLD_H);
     const c = readLineCoords(line);
     if (which === 'start') { c.x1 = x; c.y1 = y; }
     else                   { c.x2 = x; c.y2 = y; }
@@ -456,6 +464,9 @@
    *  shift the whole line along that axis. (And vice versa for vertical.) */
   function shiftLineForEndpointDrag(line, which, x, y) {
     x = global.snap(x); y = global.snap(y);
+    // Clamp to stay within the world bounds.
+    x = global.clamp(x, 0, global.WORLD_W);
+    y = global.clamp(y, 0, global.WORLD_H);
     const c = readLineCoords(line);
     const dx = c.x2 - c.x1, dy = c.y2 - c.y1;
     const isHoriz = dy === 0;

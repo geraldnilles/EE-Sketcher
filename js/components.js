@@ -33,6 +33,11 @@
     }
     if (rows < 1) rows = 1;
 
+    // Clamp position so the entire component stays within the world bounds.
+    // Rect spans x..x+width in X, and y-25..y+rows*25 in Y.
+    x = global.clamp(snap(x), 0, global.WORLD_W - width);
+    y = global.clamp(snap(y), 25, global.WORLD_H - rows * 25);
+
     const g = document.createElementNS(SVG_NS, 'g');
     g.setAttribute('class', 'generic-component');
     g.setAttribute('transform', `translate(${snap(x)} ${snap(y)})`);
@@ -309,7 +314,14 @@
   }
 
   function setOrigin(el, x, y) {
-    el.setAttribute('transform', `translate(${snap(x)} ${snap(y)})`);
+    x = snap(x); y = snap(y);
+    // Clamp position so the entire component stays within the world bounds.
+    // Rect spans x..x+width in X, and y-25..y+rows*25 in Y.
+    const w = parseInt(el.getAttribute('data-width') || '100', 10);
+    const rows = parseInt(el.getAttribute('data-rows') || '1', 10);
+    x = global.clamp(x, 0, global.WORLD_W - w);
+    y = global.clamp(y, 25, global.WORLD_H - rows * 25);
+    el.setAttribute('transform', 'translate(' + x + ' ' + y + ')');
   }
 
   // Expose
