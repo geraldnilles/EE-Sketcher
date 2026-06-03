@@ -11,7 +11,7 @@
 
    The viewBox always preserves the aspect ratio of the canvas-wrap
    container (because the <svg> still has preserveAspectRatio="xMidYMid
-   meet").  The world extents we expose to the user stay (0, 0, 2000, 1500)
+   meet").  The world extents we expose to the user stay (0, 0, 1500, 1000)
    so all existing coordinates remain valid; we just choose which slice
    of that world to display.
    ===================================================================== */
@@ -19,8 +19,8 @@
   'use strict';
 
   /* -------- World extents (the "infinite" drawing area) -------- */
-  const WORLD_W = 2000;
-  const WORLD_H = 1500;
+  const WORLD_W = 1500;
+  const WORLD_H = 1000;
 
   /* -------- Zoom limits (in user-units-per-CSS-pixel) -------- */
   // MIN_SCALE = world units per pixel at most-zoomed-out.

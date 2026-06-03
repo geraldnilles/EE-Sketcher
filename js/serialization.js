@@ -180,7 +180,7 @@
     // importSchema() can restore their zoom/pan on round-trip.
     const userViewBox = svg.getAttribute('viewBox');
     if (userViewBox) clone.setAttribute('data-view-box', userViewBox);
-    clone.setAttribute('viewBox', '0 0 2000 1500');
+    clone.setAttribute('viewBox', '0 0 1500 1000');
     clone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     // Add a friendly XML declaration
     const xml = new XMLSerializer().serializeToString(clone);
