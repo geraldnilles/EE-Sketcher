@@ -248,6 +248,15 @@
         const rows = new Set(Array.from(pins).map((p) => p.getAttribute('data-row')));
         g.setAttribute('data-rows', String(rows.size || 1));
       }
+      // Restore data-label-top/data-label-bottom from the text elements
+      if (!g.getAttribute('data-label-top')) {
+        const tl = g.querySelector('text.label-top');
+        if (tl) g.setAttribute('data-label-top', tl.textContent || '');
+      }
+      if (!g.getAttribute('data-label-bottom')) {
+        const bl = g.querySelector('text.label-bottom');
+        if (bl) g.setAttribute('data-label-bottom', bl.textContent || '');
+      }
     });
     // Ensure all imported lines have data-id
     liveSvg.querySelectorAll('line.net-line').forEach((ln) => {

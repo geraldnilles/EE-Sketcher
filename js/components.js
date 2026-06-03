@@ -50,6 +50,32 @@
     rect.setAttribute('stroke-width', '2');
     g.appendChild(rect);
 
+    // Top label (centered above the rect)
+    const topLabel = document.createElementNS(SVG_NS, 'text');
+    topLabel.setAttribute('class', 'label-top');
+    topLabel.setAttribute('x', String(width / 2));
+    topLabel.setAttribute('y', '-35');
+    topLabel.setAttribute('text-anchor', 'middle');
+    topLabel.setAttribute('dominant-baseline', 'middle');
+    topLabel.setAttribute('font-family', 'sans-serif');
+    topLabel.setAttribute('font-size', '14');
+    topLabel.setAttribute('font-weight', 'bold');
+    topLabel.textContent = '';
+    g.appendChild(topLabel);
+
+    // Bottom label (centered below the rect)
+    const bottomLabel = document.createElementNS(SVG_NS, 'text');
+    bottomLabel.setAttribute('class', 'label-bottom');
+    bottomLabel.setAttribute('x', String(width / 2));
+    bottomLabel.setAttribute("y", String(rows * 25 + 10));
+    bottomLabel.setAttribute('text-anchor', 'middle');
+    bottomLabel.setAttribute('dominant-baseline', 'middle');
+    bottomLabel.setAttribute('font-family', 'sans-serif');
+    bottomLabel.setAttribute('font-size', '14');
+    bottomLabel.setAttribute('font-weight', 'bold');
+    bottomLabel.textContent = '';
+    g.appendChild(bottomLabel);
+
     // pin text nodes
     for (let i = 0; i < rows; i++) {
       const l = document.createElementNS(SVG_NS, 'text');
@@ -82,6 +108,8 @@
     // expose layout as data-* for serialization round-trip & sidebar reads
     g.setAttribute('data-width', String(width));
     g.setAttribute('data-rows',  String(rows));
+    g.setAttribute('data-label-top', '');
+    g.setAttribute('data-label-bottom', '');
 
     const layer = document.getElementById('components-layer');
     if (layer) layer.appendChild(g);
@@ -107,6 +135,16 @@
     g.querySelectorAll('text.pin-right').forEach((t) => {
       t.setAttribute('x', String(width - 5));
     });
+    // Reposition top and bottom labels
+    const topLabel = g.querySelector('text.label-top');
+    if (topLabel) {
+      topLabel.setAttribute('x', String(width / 2));
+    }
+    const bottomLabel = g.querySelector('text.label-bottom');
+    if (bottomLabel) {
+      bottomLabel.setAttribute('x', String(width / 2));
+      bottomLabel.setAttribute("y", String(rows * 25 + 10));
+    }
   }
 
   /**
@@ -165,6 +203,20 @@
     }
 
     // Label patches
+    if (typeof patch.labelTop === 'string') {
+      const topLabel = el.querySelector('text.label-top');
+      if (topLabel) {
+        topLabel.textContent = patch.labelTop;
+      }
+      el.setAttribute('data-label-top', patch.labelTop);
+    }
+    if (typeof patch.labelBottom === 'string') {
+      const bottomLabel = el.querySelector('text.label-bottom');
+      if (bottomLabel) {
+        bottomLabel.textContent = patch.labelBottom;
+      }
+      el.setAttribute('data-label-bottom', patch.labelBottom);
+    }
     if (Array.isArray(patch.labelL)) {
       patch.labelL.forEach((txt, i) => {
         const node = el.querySelector(`text.pin-left[data-row="${i}"]`);
@@ -230,9 +282,25 @@
       left.push(l  ? l.textContent  : defaultLabel('L', i));
       right.push(r ? r.textContent : defaultLabel('R', i));
     }
-    return { left, right };
+    const topLabel = el.querySelector('text.label-top');
+    const bottomLabel = el.querySelector('text.label-bottom');
+    return {
+      left, right,
+      top: topLabel ? topLabel.textContent : '',
+      bottom: bottomLabel ? bottomLabel.textContent : ''
+    };
   }
 
+  /** Read the top label text of a component. */
+  function readLabelTop(el) {
+    const t = el.querySelector('text.label-top');
+    return t ? t.textContent : '';
+  }
+  /** Read the bottom label text of a component. */
+  function readLabelBottom(el) {
+    const t = el.querySelector('text.label-bottom');
+    return t ? t.textContent : '';
+  }
   /** Read the absolute top-left pin origin (in SVG units) of a component. */
   function readOrigin(el) {
     const m = /translate\(\s*(-?\d+)\s*,?\s*(-?\d+)\s*\)/.exec(el.getAttribute('transform') || '');
@@ -249,6 +317,8 @@
   global.updateComponent  = updateComponent;
   global.deleteComponent  = deleteComponent;
   global.readLabels       = readLabels;
+  global.readLabelTop     = readLabelTop;
+  global.readLabelBottom  = readLabelBottom;
   global.readOrigin       = readOrigin;
   global.setOrigin        = setOrigin;
   global.getRows          = getRows;

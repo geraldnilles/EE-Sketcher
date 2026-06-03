@@ -42,6 +42,33 @@
     const rows   = global.getRows(g);
     const width  = global.getWidth(g);
 
+    // Top / Bottom labels above the pin grid
+    const topRow = el('div', { style: 'margin-bottom: 6px;' }, [
+      el('label', { style: 'font-size: 11px; color: #666; display: block; margin-bottom: 2px;' }, ['Top Label']),
+      el('input', {
+        type: 'text', value: labels.top || '',
+        placeholder: 'e.g. U1',
+        style: 'width: 100%; box-sizing: border-box;',
+        oninput: (e) => {
+          global.updateComponent(g, { labelTop: e.target.value });
+        },
+      }),
+    ]);
+    body.appendChild(topRow);
+
+    const bottomRow = el('div', { style: 'margin-bottom: 8px;' }, [
+      el('label', { style: 'font-size: 11px; color: #666; display: block; margin-bottom: 2px;' }, ['Bottom Label']),
+      el('input', {
+        type: 'text', value: labels.bottom || '',
+        placeholder: 'e.g. 74HC00',
+        style: 'width: 100%; box-sizing: border-box;',
+        oninput: (e) => {
+          global.updateComponent(g, { labelBottom: e.target.value });
+        },
+      }),
+    ]);
+    body.appendChild(bottomRow);
+
     // Pin inputs (two-column grid)
     const grid = el('div', { class: 'pin-grid' });
     grid.appendChild(el('div', { class: 'pin-label' }, ['Pin Labels (left / right)']));
