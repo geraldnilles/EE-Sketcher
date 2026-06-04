@@ -66,14 +66,17 @@
 
     // Clamp viewBox to world size so the user never sees beyond the valid canvas.
     if (w > WORLD_W || h > WORLD_H) {
-      const targetAsp = w / h;
       const wrapAsp = wrap.clientWidth / wrap.clientHeight;
-      if (targetAsp > wrapAsp) {
-        // view is wider than container — clamp width to world, derive height
-        w = WORLD_W;
-        h = w / wrapAsp;
+      // Calculate the largest viewBox that fits within the world at this aspect ratio.
+      // We must ensure BOTH width and height are within bounds, otherwise a viewBox
+      // that exceeds one dimension can re-trigger the clamp on every zoom step,
+      // cancelling the zoom and making zoom-in appear stuck.
+      const wFit = WORLD_W;
+      const hFit = wFit / wrapAsp;
+      if (hFit <= WORLD_H) {
+        w = wFit;
+        h = hFit;
       } else {
-        // view is taller than container — clamp height to world, derive width
         h = WORLD_H;
         w = h * wrapAsp;
       }
