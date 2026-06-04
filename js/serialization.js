@@ -268,11 +268,13 @@
       if (!c.getAttribute('data-coord')) c.setAttribute('data-coord', cx + ',' + cy);
     });
 
-    // Heal any orphan splits that came in with the schema (a saved file
-    // may have stored the broken state if a junction was deleted before
-    // export), then recompute junctions from scratch.
-    if (global.mergeLines) global.mergeLines();
-    global.recomputeJunctions();
+    // Run our comprehensive topology engine pass to handle splits, merges, and dots cleanly
+    if (global.refreshNetTopology) {
+      global.refreshNetTopology();
+    } else {
+      if (global.mergeLines) global.mergeLines();
+      global.recomputeJunctions();
+    }
 
     // Clear selection
     global.clearSelection();

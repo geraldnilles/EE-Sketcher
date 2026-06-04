@@ -269,23 +269,11 @@
     const ln = newLineEl(x1, y1, x2, y2);
     layer.appendChild(ln);
 
-    // Splits: if either endpoint lands strictly in the interior of an
-    // existing line, split that line.
-    splitLineAt(x1, y1);
-    splitLineAt(x2, y2);
-
     // Endpoint hit targets for drag-mode interaction
     ln.appendChild(newEndpointHit(ln, 'start'));
     ln.appendChild(newEndpointHit(ln, 'end'));
 
-    // Heal: a freshly-created line can sit exactly on top of an
-    // existing free endpoint.  After splits, the new line's endpoint
-    // has count >= 2 (the new line + whatever was there).  If exactly
-    // 2 and the existing line is collinear, merge them.  We always run
-    // mergeLines() to be safe — it is a no-op when there is nothing to
-    // merge.
-    mergeLines();
-    recomputeJunctions();
+    refreshNetTopology();
     return ln;
   }
 
@@ -294,11 +282,9 @@
     if (!lineEl) return;
     if (lineEl === global.appState.selected) global.appState.selected = null;
     lineEl.remove();
-    // Heal: deleting a line can drop a coord from 3 endpoints to 2
-    // (a T-junction becoming a plain butt-join).  The heal pass
-    // detects that and merges the two surviving collinear segments.
-    mergeLines();
-    recomputeJunctions();
+    
+    // Upgrade this line to trigger a full stateless pass
+    refreshNetTopology(); 
     global.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: null } }));
   }
 
@@ -358,6 +344,87 @@
       return px > lo && px < hi;
     }
     return false;
+  }
+
+
+  /**
+   * splitAllLines()
+   * Statelessly scans every line on the canvas against every unique line endpoint coordinate.
+   * If any endpoint lies strictly in the interior of a line segment, that line is split 
+   * into two distinct segments. Loops until no more splits can be performed.
+   */
+  function splitAllLines() {
+    const layer = document.getElementById('nets-layer');
+    if (!layer) return false;
+
+    let didSplit = false;
+    let safety = 0;
+    const MAX_RUNS = 1000;
+
+    while (safety < MAX_RUNS) {
+      const lines = Array.from(layer.querySelectorAll('line.net-line'));
+      
+      // Collect all unique endpoints currently on the canvas
+      const endpoints = new Set();
+      lines.forEach((ln) => {
+        endpoints.add(ln.getAttribute('x1') + ',' + ln.getAttribute('y1'));
+        endpoints.add(ln.getAttribute('x2') + ',' + ln.getAttribute('y2'));
+      });
+
+      let splitOccurred = false;
+
+      for (const ln of lines) {
+        const x1 = +ln.getAttribute('x1');
+        const y1 = +ln.getAttribute('y1');
+        const x2 = +ln.getAttribute('x2');
+        const y2 = +ln.getAttribute('y2');
+
+        for (const ep of endpoints) {
+          const commaIdx = ep.indexOf(',');
+          const ex = +ep.slice(0, commaIdx);
+          const ey = +ep.slice(commaIdx + 1);
+
+          // If another line's endpoint breaks the interior of this line segment, execute a split
+          if (pointOnSegmentInterior(ex, ey, x1, y1, x2, y2)) {
+            const origId = ln.getAttribute('data-id');
+            ln.remove();
+
+            // Segment A (Origin to interior intersection point)
+            const a = newLineEl(x1, y1, ex, ey, origId);
+            a.appendChild(newEndpointHit(a, 'start'));
+            a.appendChild(newEndpointHit(a, 'end'));
+            layer.appendChild(a);
+
+            // Segment B (Intersection point to terminal point)
+            const b = newLineEl(ex, ey, x2, y2, null);
+            b.appendChild(newEndpointHit(b, 'start'));
+            b.appendChild(newEndpointHit(b, 'end'));
+            layer.appendChild(b);
+
+            splitOccurred = true;
+            didSplit = true;
+            break; 
+          }
+        }
+        if (splitOccurred) break; 
+      }
+
+      if (!splitOccurred) break; 
+      safety++;
+    }
+
+    return didSplit;
+  }
+
+  /**
+   * refreshNetTopology()
+   * Fully stateless network engine execution sequence. Runs a deep clean pass across 
+   * all layout wires by executing structural splits, healing joints, and rendering symbols.
+   */
+  function refreshNetTopology() {
+    splitAllLines();
+    mergeLines();
+    recomputeJunctions();
   }
 
   /**
@@ -915,6 +982,7 @@
   }
 
   // Expose
+  global.refreshNetTopology = refreshNetTopology;
   global.createLine        = createLine;
   global.deleteLine        = deleteLine;
   global.splitLineAt       = splitLineAt;

@@ -119,7 +119,7 @@
     const layer = document.getElementById('components-layer');
     if (layer) layer.appendChild(g);
 
-    if (global.recomputeJunctions) global.recomputeJunctions();
+    if (global.refreshNetTopology) global.refreshNetTopology();
     return g;
   }
 
@@ -235,7 +235,7 @@
       });
     }
 
-    if (global.recomputeJunctions) global.recomputeJunctions();
+    if (global.refreshNetTopology) global.refreshNetTopology();
 
     // If this component is currently selected, ask the sidebar to re-render
     // so the +/- Row and Expand/Contract buttons reflect the new state
@@ -272,7 +272,7 @@
     if (!el) return;
     if (el === global.appState.selected) global.appState.selected = null;
     el.remove();
-    if (global.recomputeJunctions) global.recomputeJunctions();
+    if (global.refreshNetTopology) global.refreshNetTopology();
     global.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: null } }));
   }
 

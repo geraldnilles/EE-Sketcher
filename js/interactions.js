@@ -199,7 +199,12 @@
       if (st.dragging) {
         st.dragging = null;
         svg.classList.remove('is-dragging');
-        global.recomputeJunctions();
+        
+        if (global.refreshNetTopology) {
+          global.refreshNetTopology();
+        } else if (global.recomputeJunctions) {
+          global.recomputeJunctions();
+        }
       }
     }
     svg.addEventListener('pointerup',     endDrag);
