@@ -2,6 +2,13 @@
 
 **EE-Sketcher** is a lightweight, single-page web application for creating clean, grid-aligned electrical block diagrams (simplified schematics). It runs entirely in your browser — no installation, no server, no sign-up required.
 
+
+<p align="center">
+  <a href="https://geraldnilles.github.io/EE-Sketcher/">
+    <img src="https://img.shields.io/badge/🚀_Launch_EE--Sketcher_Now-Click_Here-2563eb?style=for-the-badge&logo=github" alt="Launch EE-Sketcher Now" height="60">
+  </a>
+</p>
+
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ---
