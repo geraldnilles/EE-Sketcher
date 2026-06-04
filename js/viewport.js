@@ -64,12 +64,33 @@
       h = w / aspect;
     }
 
-    // Clamp panning so we can't pan past the world (allow a small margin so
-    // a fully-zoomed-out view still shows the whole world).
-    const marginX = w * 0.25;
-    const marginY = h * 0.25;
-    x = Math.max(-marginX, Math.min(WORLD_W + marginX - w, x));
-    y = Math.max(-marginY, Math.min(WORLD_H + marginY - h, y));
+    // Clamp viewBox to world size so the user never sees beyond the valid canvas.
+    if (w > WORLD_W || h > WORLD_H) {
+      const targetAsp = w / h;
+      const wrapAsp = wrap.clientWidth / wrap.clientHeight;
+      if (targetAsp > wrapAsp) {
+        // view is wider than container — clamp width to world, derive height
+        w = WORLD_W;
+        h = w / wrapAsp;
+      } else {
+        // view is taller than container — clamp height to world, derive width
+        h = WORLD_H;
+        w = h * wrapAsp;
+      }
+    }
+
+    // Clamp panning so the viewBox stays strictly within the world bounds.
+    // If the view is larger than the world (zoomed far out), centre it.
+    if (w <= WORLD_W) {
+      x = Math.max(0, Math.min(WORLD_W - w, x));
+    } else {
+      x = (WORLD_W - w) / 2;
+    }
+    if (h <= WORLD_H) {
+      y = Math.max(0, Math.min(WORLD_H - h, y));
+    } else {
+      y = (WORLD_H - h) / 2;
+    }
 
     _view = { x, y, w, h };
     _svg.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
