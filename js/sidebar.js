@@ -157,6 +157,40 @@
     }, ['Delete Component']));
   }
 
+
+  function renderVddPanel(body, g) {
+    clear(body);
+    body.appendChild(el('h3', { style: 'margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--fg-secondary);' }, ['Power Bus Connection (VDD)']));
+
+    const currentLabel = g.getAttribute('data-label') || 'VDD';
+
+    const labelRow = el('div', { style: 'margin-bottom: 8px;' }, [
+      el('label', { style: 'font-size: 11px; color: #666; display: block; margin-bottom: 2px;' }, ['Power Label']),
+      el('input', {
+        type: 'text',
+        value: currentLabel,
+        placeholder: 'e.g. VDD, 3V3, 5V',
+        style: 'width: 100%; box-sizing: border-box;',
+        oninput: (e) => {
+          global.updateComponent(g, { labelVdd: e.target.value });
+        },
+      }),
+    ]);
+    body.appendChild(labelRow);
+
+    const o = global.readOrigin(g);
+    body.appendChild(el('pre', { class: 'meta' }, [
+      `Position: (${o.x}, ${o.y})\nType: Power Reference`,
+    ]));
+
+    body.appendChild(el('button', {
+      class: 'danger',
+      style: 'width: 100%; margin-top: 4px;',
+      onclick: () => global.deleteComponent(g),
+      title: "Delete VDD  [x / Backspace / Delete]",
+    }, ['Delete Component']));
+  }
+
   function renderLinePanel(body, line) {
     clear(body);
     const c = global.readLineCoords(line);
@@ -181,6 +215,9 @@
     if (sel.classList && sel.classList.contains('generic-component')) {
       if (sel.classList.contains('gnd-component')) {
         return renderGndPanel(body, sel);
+      }
+      if (sel.classList.contains('vdd-component')) {
+        return renderVddPanel(body, sel);
       }
       return renderComponentPanel(body, sel);
     }

@@ -76,6 +76,26 @@
       });
     }
 
+    /* ---- + VDD button ---- */
+    const vddBtn = $('add-vdd-btn');
+    if (vddBtn) {
+      vddBtn.addEventListener('click', () => {
+        let _vx = 100, _vy = 100;
+        if (global.getViewBox) {
+          const vb = global.getViewBox();
+          _vx = global.snap(vb.x + vb.w / 2);
+          _vy = global.snap(vb.y + vb.h / 2);
+        }
+        const g = global.createVddComponent(_vx, _vy);
+        if (g) {
+          document.querySelectorAll('.is-selected').forEach((e) => e.classList.remove('is-selected'));
+          g.classList.add('is-selected');
+          global.appState.selected = g;
+          global.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: g } }));
+        }
+      });
+    }
+
     /* ---- Data Portal ---- */
     const portal   = $('data-portal');
     const exportBtn = $('export-btn');

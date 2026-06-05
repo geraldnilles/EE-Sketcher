@@ -19,6 +19,7 @@
       <div class="toolbar-actions">
         <button type="button" id="add-component-btn" title="Add Component (A)">+ Component</button>
         <button type="button" id="add-gnd-btn" title="Add GND (G)">+ GND</button>
+        <button type="button" id="add-vdd-btn" title="Add VDD (V)">+ VDD</button>
       </div>
     </header>
 
@@ -62,6 +63,10 @@
             <g id="gnd" data-pin1="0,0" class="component-body">
               <path d="M 0,0 V 10" fill="none"/>
               <path d="M -15,10 H 15 L 0,25 Z"/>
+            </g>
+            <g id="power-bus-t" data-pin1="0,0" class="component-body">
+              <line x1="0" y1="0" x2="0" y2="-10"/>
+              <line x1="-15" y1="-10" x2="15" y2="-10"/>
             </g>
           </defs>
           <!-- Background -->

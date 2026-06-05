@@ -73,6 +73,7 @@
           t.setAttribute('x', String(newW - 5));
         });
       }
+      if (g.classList.contains('vdd-component')) return;
     });
     // Snap junction positions (defensive)
     root.querySelectorAll('circle.junction').forEach((c) => {
@@ -123,7 +124,7 @@
     // widths (not multiples of 50) and non-grid coordinates are silently
     // snapped by snapImportedCoords() below — not rejected.
     svg.querySelectorAll('g.generic-component').forEach((g) => {
-      if (g.classList.contains('gnd-component')) return;
+      if (g.classList.contains('gnd-component') || g.classList.contains('vdd-component')) return;
       const rect = g.querySelector('rect.component-body');
       if (!rect) throw new Error('Imported component missing <rect class="component-body">');
       const rows = parseInt(g.getAttribute('data-rows') || '0', 10);
@@ -241,6 +242,14 @@
     // Ensure all imported components have data-id
     liveSvg.querySelectorAll('g.generic-component').forEach((g) => {
       if (g.classList.contains('gnd-component')) return;
+      if (g.classList.contains('vdd-component')) {
+        if (!g.getAttribute('data-id')) g.setAttribute('data-id', global.uid('cmp'));
+        if (!g.getAttribute('data-label')) {
+          const lbl = g.querySelector('text.vdd-label');
+          g.setAttribute('data-label', lbl ? lbl.textContent || 'VDD' : 'VDD');
+        }
+        return;
+      }
       if (!g.getAttribute('data-id')) g.setAttribute('data-id', global.uid('cmp'));
       if (!g.getAttribute('data-width')) {
         const r = g.querySelector('rect.component-body');

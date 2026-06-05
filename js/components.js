@@ -168,6 +168,16 @@
     if (!el || !el.classList.contains('generic-component')) return;
     if (!patch || typeof patch !== 'object') return;
 
+    if (el.classList.contains('vdd-component')) {
+      if (typeof patch.labelVdd === 'string') {
+        const txtEl = el.querySelector('text.vdd-label');
+        if (txtEl) txtEl.textContent = patch.labelVdd;
+        el.setAttribute('data-label', patch.labelVdd);
+      }
+      if (global.refreshNetTopology) global.refreshNetTopology();
+      return;
+    }
+
     let rows  = getRows(el);
     let width = getWidth(el);
     let structuralChanged = false;
@@ -318,6 +328,9 @@
     if (el.classList.contains('gnd-component')) {
       x = global.clamp(x, 15, global.WORLD_W - 15);
       y = global.clamp(y, 0, global.WORLD_H - 25);
+    } else if (el.classList.contains('vdd-component')) {
+      x = global.clamp(x, 15, global.WORLD_W - 15);
+      y = global.clamp(y, 30, global.WORLD_H); // Allows space for top label
     } else {
       // Clamp position so the entire component stays within the world bounds.
       // Rect spans x..x+width in X, and y-25..y+rows*25 in Y.
@@ -349,9 +362,42 @@
     return g;
   }
 
+
+  function createVddComponent(x, y) {
+    x = global.clamp(snap(x), 15, global.WORLD_W - 15);
+    y = global.clamp(snap(y), 30, global.WORLD_H);
+
+    const g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('class', 'generic-component vdd-component');
+    g.setAttribute('transform', `translate(${snap(x)} ${snap(y)})`);
+    g.setAttribute('data-id', global.uid('cmp'));
+    g.setAttribute('data-label', 'VDD');
+
+    const useEl = document.createElementNS(SVG_NS, 'use');
+    useEl.setAttribute('href', '#power-bus-t');
+    g.appendChild(useEl);
+
+    const txtEl = document.createElementNS(SVG_NS, 'text');
+    txtEl.setAttribute('class', 'vdd-label');
+    txtEl.setAttribute('y', '-15');
+    txtEl.setAttribute('text-anchor', 'middle');
+    txtEl.setAttribute('font-family', 'sans-serif');
+    txtEl.setAttribute('font-size', '12');
+    txtEl.setAttribute('font-weight', 'bold');
+    txtEl.textContent = 'VDD';
+    g.appendChild(txtEl);
+
+    const layer = document.getElementById('components-layer');
+    if (layer) layer.appendChild(g);
+
+    if (global.refreshNetTopology) global.refreshNetTopology();
+    return g;
+  }
+
   // Expose
   global.createComponent  = createComponent;
   global.createGndComponent = createGndComponent;
+  global.createVddComponent = createVddComponent;
   global.updateComponent  = updateComponent;
   global.deleteComponent  = deleteComponent;
   global.readLabels       = readLabels;
