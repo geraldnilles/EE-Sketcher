@@ -53,6 +53,7 @@
     });
     // Snap component transforms
     root.querySelectorAll('g.generic-component').forEach((g) => {
+      if (g.classList.contains('gnd-component')) return;
       const m = /translate\(\s*(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)\s*\)/.exec(g.getAttribute('transform') || '');
       if (m) {
         g.setAttribute('transform', `translate(${global.snap(+m[1])} ${global.snap(+m[2])})`);
@@ -122,6 +123,7 @@
     // widths (not multiples of 50) and non-grid coordinates are silently
     // snapped by snapImportedCoords() below — not rejected.
     svg.querySelectorAll('g.generic-component').forEach((g) => {
+      if (g.classList.contains('gnd-component')) return;
       const rect = g.querySelector('rect.component-body');
       if (!rect) throw new Error('Imported component missing <rect class="component-body">');
       const rows = parseInt(g.getAttribute('data-rows') || '0', 10);
@@ -238,6 +240,7 @@
 
     // Ensure all imported components have data-id
     liveSvg.querySelectorAll('g.generic-component').forEach((g) => {
+      if (g.classList.contains('gnd-component')) return;
       if (!g.getAttribute('data-id')) g.setAttribute('data-id', global.uid('cmp'));
       if (!g.getAttribute('data-width')) {
         const r = g.querySelector('rect.component-body');

@@ -18,6 +18,7 @@
       </div>
       <div class="toolbar-actions">
         <button type="button" id="add-component-btn" title="Add Component (A)">+ Component</button>
+        <button type="button" id="add-gnd-btn" title="Add GND (G)">+ GND</button>
       </div>
     </header>
 
@@ -58,6 +59,10 @@
               <rect width="100" height="100" fill="url(#grid-fine)"/>
               <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#c8cfdb" stroke-width="1"/>
             </pattern>
+            <g id="gnd" data-pin1="0,0" class="component-body">
+              <path d="M 0,0 V 10" fill="none"/>
+              <path d="M -15,10 H 15 L 0,25 Z"/>
+            </g>
           </defs>
           <!-- Background -->
           <rect x="0" y="0" width="1500" height="1000" fill="#fffff0" />

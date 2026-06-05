@@ -212,6 +212,14 @@ input[type="text"]:focus, textarea:focus {
   stroke-width: 2.5 !important;
 }
 
+.generic-component:hover use {
+  stroke: var(--accent);
+}
+.is-selected use {
+  stroke: var(--accent) !important;
+  stroke-width: 2.5 !important;
+}
+
 .net-line { transition: stroke .12s ease, stroke-width .12s ease; }
 .net-line:hover { stroke: var(--accent); }
 .is-selected.net-line { stroke: var(--accent); stroke-width: 2.5; }

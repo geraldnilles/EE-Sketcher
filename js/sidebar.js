@@ -140,6 +140,23 @@
     }, ['Delete Component']));
   }
 
+  function renderGndPanel(body, g) {
+    clear(body);
+    body.appendChild(el('h3', { style: 'margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--fg-secondary);' }, ['Ground Connection']));
+
+    const o = global.readOrigin(g);
+    body.appendChild(el('pre', { class: 'meta' }, [
+      `Position: (${o.x}, ${o.y})\nType: Static Reference`,
+    ]));
+
+    body.appendChild(el('button', {
+      class: 'danger',
+      style: 'width: 100%; margin-top: 4px;',
+      onclick: () => global.deleteComponent(g),
+      title: "Delete GND  [x / Backspace / Delete]",
+    }, ['Delete Component']));
+  }
+
   function renderLinePanel(body, line) {
     clear(body);
     const c = global.readLineCoords(line);
@@ -162,6 +179,9 @@
     const sel = global.appState.selected;
     if (!sel) return renderEmpty(body);
     if (sel.classList && sel.classList.contains('generic-component')) {
+      if (sel.classList.contains('gnd-component')) {
+        return renderGndPanel(body, sel);
+      }
       return renderComponentPanel(body, sel);
     }
     if (sel.classList && sel.classList.contains('net-line')) {
