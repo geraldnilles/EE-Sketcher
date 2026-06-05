@@ -52,26 +52,22 @@
     if (!layer) return [];
     const out = [];
     layer.querySelectorAll('g.generic-component').forEach((g) => {
-      const o = global.readOrigin(g);
-      if (g.classList.contains('gnd-component')) {
-        out.push({
-          x: o.x - 15,
-          y: o.y,
-          w: 30,
-          h: 25,
-          el: g,
-        });
-      } else {
-        const w = parseInt(g.getAttribute('data-width') || '100', 10);
-        const rows = parseInt(g.getAttribute('data-rows') || '1', 10);
-        out.push({
-          x: o.x,
-          y: o.y - 25,
-          w: w,
-          h: (rows + 1) * 25,
-          el: g,
-        });
+      // Skip power references entirely so nets can cross them freely
+      if (g.classList.contains('gnd-component') || g.classList.contains('vdd-component')) {
+        return;
       }
+
+      // Existing logic for standard generic blocks remains below
+      const o = global.readOrigin(g);
+      const w = parseInt(g.getAttribute('data-width') || '100', 10);
+      const rows = parseInt(g.getAttribute('data-rows') || '1', 10);
+      out.push({
+        x: o.x,
+        y: o.y - 25,
+        w: w,
+        h: (rows + 1) * 25,
+        el: g,
+      });
     });
     return out;
   }
