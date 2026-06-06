@@ -96,6 +96,28 @@
       });
     }
 
+    /* ---- + Resistor / Capacitor / Inductor buttons ---- */
+    ['resistor', 'capacitor', 'inductor'].forEach((type) => {
+      const btn = $(`add-${type}-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          let vx = 100, vy = 100;
+          if (global.getViewBox) {
+            const vb = global.getViewBox();
+            vx = global.snap(vb.x + vb.w / 2);
+            vy = global.snap(vb.y + vb.h / 2);
+          }
+          const g = global.createPassiveComponent(type, vx, vy);
+          if (g) {
+            document.querySelectorAll('.is-selected').forEach((e) => e.classList.remove('is-selected'));
+            g.classList.add('is-selected');
+            global.appState.selected = g;
+            global.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: g } }));
+          }
+        });
+      }
+    });
+
     /* ---- Data Portal ---- */
     const portal   = $('data-portal');
     const exportBtn = $('export-btn');

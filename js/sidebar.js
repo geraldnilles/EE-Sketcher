@@ -158,6 +158,49 @@
   }
 
 
+  function renderPassivePanel(body, g) {
+    clear(body);
+    const type = g.getAttribute('data-type') || 'component';
+    const label = g.getAttribute('data-label') || '';
+    const rot = g.getAttribute('data-rotate') || '0';
+
+    body.appendChild(el('h3', { style: 'margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--fg-secondary);' }, [`${type}`]));
+
+    const labelRow = el('div', { style: 'margin-bottom: 8px;' }, [
+      el('label', { style: 'font-size: 11px; color: #666; display: block; margin-bottom: 2px;' }, ['Component Label']),
+      el('input', {
+        type: 'text',
+        value: label,
+        placeholder: 'e.g. R1, C5',
+        oninput: (e) => global.updateComponent(g, { labelPassive: e.target.value }),
+      }),
+    ]);
+    body.appendChild(labelRow);
+
+    const rotRow = el('div', { style: 'margin-bottom: 12px;' }, [
+      el('label', { style: 'font-size: 11px; color: #666; display: block; margin-bottom: 2px;' }, ['Rotation']),
+      el('select', {
+        style: 'width: 100%%; padding: 4px; border-radius: var(--radius);',
+        onchange: (e) => global.updateComponent(g, { rotatePassive: parseInt(e.target.value, 10) }),
+      }, [
+        el('option', { value: '0', selected: rot === '0' }, ['0 Degrees (Horizontal)']),
+        el('option', { value: '90', selected: rot === '90' }, ['90 Degrees (Vertical)']),
+      ]),
+    ]);
+    body.appendChild(rotRow);
+
+    const o = global.readOrigin(g);
+    body.appendChild(el('pre', { class: 'meta' }, [
+      `Position: (${o.x}, ${o.y})\nType: Passive Ref (${type})\nRotation: ${rot}°`
+    ]));
+
+    body.appendChild(el('button', {
+      class: 'danger',
+      style: 'width: 100%; margin-top: 4px;',
+      onclick: () => global.deleteComponent(g),
+    }, ['Delete Component']));
+  }
+
   function renderVddPanel(body, g) {
     clear(body);
     body.appendChild(el('h3', { style: 'margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--fg-secondary);' }, ['Power Bus Connection (VDD)']));
@@ -213,6 +256,9 @@
     const sel = global.appState.selected;
     if (!sel) return renderEmpty(body);
     if (sel.classList && sel.classList.contains('generic-component')) {
+      if (sel.classList.contains('passive-component')) {
+        return renderPassivePanel(body, sel);
+      }
       if (sel.classList.contains('gnd-component')) {
         return renderGndPanel(body, sel);
       }

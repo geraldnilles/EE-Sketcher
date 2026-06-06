@@ -168,6 +168,38 @@
     if (!el || !el.classList.contains('generic-component')) return;
     if (!patch || typeof patch !== 'object') return;
 
+    if (el.classList.contains('passive-component')) {
+      if (typeof patch.labelPassive === 'string') {
+        const txtEl = el.querySelector('text.passive-label');
+        if (txtEl) txtEl.textContent = patch.labelPassive;
+        el.setAttribute('data-label', patch.labelPassive);
+      }
+      if (patch.rotatePassive !== undefined) {
+        const rot = String(patch.rotatePassive);
+        const useEl = el.querySelector('use');
+        if (useEl) useEl.setAttribute('transform', `rotate(${rot})`);
+        el.setAttribute('data-rotate', rot);
+
+        const txtEl = el.querySelector('text.passive-label');
+        if (txtEl) {
+          if (rot === '90') {
+            txtEl.setAttribute('x', '20');
+            txtEl.setAttribute('y', '0');
+            txtEl.setAttribute('text-anchor', 'start');
+          } else {
+            txtEl.setAttribute('x', '0');
+            txtEl.setAttribute('y', '-15');
+            txtEl.setAttribute('text-anchor', 'middle');
+          }
+        }
+      }
+      if (global.refreshNetTopology) global.refreshNetTopology();
+      if (patch.rotatePassive !== undefined && global.appState && global.appState.selected === el) {
+        global.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: el } }));
+      }
+      return;
+    }
+
     if (el.classList.contains('vdd-component')) {
       if (typeof patch.labelVdd === 'string') {
         const txtEl = el.querySelector('text.vdd-label');
@@ -325,7 +357,10 @@
 
   function setOrigin(el, x, y) {
     x = snap(x); y = snap(y);
-    if (el.classList.contains('gnd-component')) {
+    if (el.classList.contains('passive-component')) {
+      x = global.clamp(x, 50, global.WORLD_W - 50);
+      y = global.clamp(y, 50, global.WORLD_H - 50);
+    } else if (el.classList.contains('gnd-component')) {
       x = global.clamp(x, 15, global.WORLD_W - 15);
       y = global.clamp(y, 0, global.WORLD_H - 25);
     } else if (el.classList.contains('vdd-component')) {
@@ -394,10 +429,46 @@
     return g;
   }
 
+  function createPassiveComponent(type, x, y) {
+    x = global.clamp(global.snap(x), 50, global.WORLD_W - 50);
+    y = global.clamp(global.snap(y), 50, global.WORLD_H - 50);
+
+    const g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('class', 'generic-component passive-component');
+    g.setAttribute('transform', `translate(${x} ${y})`);
+    g.setAttribute('data-id', global.uid('cmp'));
+    g.setAttribute('data-type', type);
+    g.setAttribute('data-label', type.toUpperCase()[0]);
+    g.setAttribute('data-rotate', '0');
+
+    const useEl = document.createElementNS(SVG_NS, 'use');
+    useEl.setAttribute('href', `#${type}`);
+    useEl.setAttribute('transform', 'rotate(0)');
+    g.appendChild(useEl);
+
+    const txtEl = document.createElementNS(SVG_NS, 'text');
+    txtEl.setAttribute('class', 'passive-label');
+    txtEl.setAttribute('x', '0');
+    txtEl.setAttribute('y', '-15');
+    txtEl.setAttribute('text-anchor', 'middle');
+    txtEl.setAttribute('font-family', 'sans-serif');
+    txtEl.setAttribute('font-size', '12');
+    txtEl.setAttribute('font-weight', 'bold');
+    txtEl.textContent = type.toUpperCase()[0];
+    g.appendChild(txtEl);
+
+    const layer = document.getElementById('components-layer');
+    if (layer) layer.appendChild(g);
+
+    if (global.refreshNetTopology) global.refreshNetTopology();
+    return g;
+  }
+
   // Expose
   global.createComponent  = createComponent;
   global.createGndComponent = createGndComponent;
   global.createVddComponent = createVddComponent;
+  global.createPassiveComponent = createPassiveComponent;
   global.updateComponent  = updateComponent;
   global.deleteComponent  = deleteComponent;
   global.readLabels       = readLabels;

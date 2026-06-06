@@ -20,6 +20,9 @@
         <button type="button" id="add-component-btn" title="Add Component (A)">+ Component</button>
         <button type="button" id="add-gnd-btn" title="Add GND (G)">+ GND</button>
         <button type="button" id="add-vdd-btn" title="Add VDD (V)">+ VDD</button>
+        <button type="button" id="add-resistor-btn" title="Add Resistor">+ Resistor</button>
+        <button type="button" id="add-capacitor-btn" title="Add Capacitor">+ Capacitor</button>
+        <button type="button" id="add-inductor-btn" title="Add Inductor">+ Inductor</button>
       </div>
     </header>
 
@@ -67,6 +70,15 @@
             <g id="power-bus-t" data-pin1="0,0" class="component-body">
               <line x1="0" y1="0" x2="0" y2="-10"/>
               <line x1="-15" y1="-10" x2="15" y2="-10"/>
+            </g>
+            <g id="resistor" data-pin1="-50,0" data-pin2="50,0" class="component-body">
+              <path d="m 50,0 h -20 l -5,-7 -10,14 -10,-14 -10,14 -10,-14 -10,14 -5,-7 H -50"/>
+            </g>
+            <g id="inductor" data-pin1="-50,0" data-pin2="50,0" class="component-body">
+              <path d="m 50,0 h -20 q -7.5,-24 -15,0 -7.5,-24 -15,0 -7.5,-24 -15,0 -7.5,-24 -15,0 H -50"/>
+            </g>
+            <g id="capacitor" data-pin1="-50,0" data-pin2="50,0" class="component-body">
+              <path d="M 50,0 H 10 M 10,-20 V 20 M -10,-20 V 20 M -10,0 H -50"/>
             </g>
           </defs>
           <!-- Background -->

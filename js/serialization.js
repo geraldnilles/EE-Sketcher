@@ -53,7 +53,7 @@
     });
     // Snap component transforms
     root.querySelectorAll('g.generic-component').forEach((g) => {
-      if (g.classList.contains('gnd-component')) return;
+      if (g.classList.contains('gnd-component') || g.classList.contains('passive-component')) return;
       const m = /translate\(\s*(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)\s*\)/.exec(g.getAttribute('transform') || '');
       if (m) {
         g.setAttribute('transform', `translate(${global.snap(+m[1])} ${global.snap(+m[2])})`);
@@ -247,6 +247,23 @@
         if (!g.getAttribute('data-label')) {
           const lbl = g.querySelector('text.vdd-label');
           g.setAttribute('data-label', lbl ? lbl.textContent || 'VDD' : 'VDD');
+        }
+        return;
+      }
+      if (g.classList.contains('passive-component')) {
+        if (!g.getAttribute('data-id')) g.setAttribute('data-id', global.uid('cmp'));
+        if (!g.getAttribute('data-type')) {
+          const useHref = g.querySelector('use')?.getAttribute('href') || '#resistor';
+          g.setAttribute('data-type', useHref.replace('#', ''));
+        }
+        if (!g.getAttribute('data-label')) {
+          const lbl = g.querySelector('text.passive-label');
+          g.setAttribute('data-label', lbl ? lbl.textContent || 'P' : 'P');
+        }
+        if (!g.getAttribute('data-rotate')) {
+          const useTrans = g.querySelector('use')?.getAttribute('transform') || '';
+          const m = /rotate\(\s*(\d+)\s*\)/.exec(useTrans);
+          g.setAttribute('data-rotate', m ? m[1] : '0');
         }
         return;
       }

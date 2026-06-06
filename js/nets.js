@@ -57,6 +57,17 @@
         return;
       }
 
+      if (g.classList.contains('passive-component')) {
+        const o = global.readOrigin(g);
+        const rot = g.getAttribute('data-rotate') || '0';
+        if (rot === '90') {
+          out.push({ x: o.x - 15, y: o.y - 50, w: 30, h: 100, el: g });
+        } else {
+          out.push({ x: o.x - 50, y: o.y - 15, w: 100, h: 30, el: g });
+        }
+        return;
+      }
+
       // Existing logic for standard generic blocks remains below
       const o = global.readOrigin(g);
       const w = parseInt(g.getAttribute('data-width') || '100', 10);
