@@ -187,9 +187,9 @@
             txtEl.setAttribute('y', '0');
             txtEl.setAttribute('text-anchor', 'start');
           } else {
-            txtEl.setAttribute('x', '0');
+            txtEl.setAttribute('x', '15');
             txtEl.setAttribute('y', '-15');
-            txtEl.setAttribute('text-anchor', 'middle');
+            txtEl.setAttribute('text-anchor', 'start');
           }
         }
       }
@@ -448,9 +448,9 @@
 
     const txtEl = document.createElementNS(SVG_NS, 'text');
     txtEl.setAttribute('class', 'passive-label');
-    txtEl.setAttribute('x', '0');
+    txtEl.setAttribute('x', '15');
     txtEl.setAttribute('y', '-15');
-    txtEl.setAttribute('text-anchor', 'middle');
+    txtEl.setAttribute('text-anchor', 'start');
     txtEl.setAttribute('font-family', 'sans-serif');
     txtEl.setAttribute('font-size', '12');
     txtEl.setAttribute('font-weight', 'bold');
