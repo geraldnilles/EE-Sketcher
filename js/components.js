@@ -438,7 +438,7 @@
     g.setAttribute('transform', `translate(${x} ${y})`);
     g.setAttribute('data-id', global.uid('cmp'));
     g.setAttribute('data-type', type);
-    g.setAttribute('data-label', type.toUpperCase()[0]);
+    g.setAttribute('data-label', '');
     g.setAttribute('data-rotate', '0');
 
     const useEl = document.createElementNS(SVG_NS, 'use');
@@ -454,7 +454,7 @@
     txtEl.setAttribute('font-family', 'sans-serif');
     txtEl.setAttribute('font-size', '12');
     txtEl.setAttribute('font-weight', 'bold');
-    txtEl.textContent = type.toUpperCase()[0];
+    txtEl.textContent = '';
     g.appendChild(txtEl);
 
     const layer = document.getElementById('components-layer');
