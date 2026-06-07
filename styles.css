@@ -365,3 +365,21 @@ button-row {
   .toolbar { flex-wrap: wrap; }
   .toolbar-actions { width: 100%; margin-left: 0; }
 }
+
+/* SVG text and label font classes for application styles */
+.label-top,
+.label-bottom {
+  font-family: sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+}
+.pin {
+  font-family: sans-serif;
+  font-size: 12px;
+}
+.vdd-label,
+.passive-label {
+  font-family: sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+}

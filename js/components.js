@@ -64,9 +64,6 @@ export function createComponent(x, y, width, rows) {
   topLabel.setAttribute('y', '-35');
   topLabel.setAttribute('text-anchor', 'middle');
   topLabel.setAttribute('dominant-baseline', 'middle');
-  topLabel.setAttribute('font-family', 'sans-serif');
-  topLabel.setAttribute('font-size', '14');
-  topLabel.setAttribute('font-weight', 'bold');
   topLabel.textContent = '';
   g.appendChild(topLabel);
 
@@ -77,9 +74,6 @@ export function createComponent(x, y, width, rows) {
   bottomLabel.setAttribute("y", String(rows * 25 + 10));
   bottomLabel.setAttribute('text-anchor', 'middle');
   bottomLabel.setAttribute('dominant-baseline', 'middle');
-  bottomLabel.setAttribute('font-family', 'sans-serif');
-  bottomLabel.setAttribute('font-size', '14');
-  bottomLabel.setAttribute('font-weight', 'bold');
   bottomLabel.textContent = '';
   g.appendChild(bottomLabel);
 
@@ -91,8 +85,6 @@ export function createComponent(x, y, width, rows) {
     l.setAttribute('y', String(i * 25));
     l.setAttribute('text-anchor', 'start');
     l.setAttribute('dominant-baseline', 'middle');
-    l.setAttribute('font-family', 'sans-serif');
-    l.setAttribute('font-size', '12');
     l.setAttribute('data-side', 'L');
     l.setAttribute('data-row',  String(i));
     l.textContent = defaultLabel('L', i);
@@ -104,8 +96,6 @@ export function createComponent(x, y, width, rows) {
     r.setAttribute('y', String(i * 25));
     r.setAttribute('text-anchor', 'end');
     r.setAttribute('dominant-baseline', 'middle');
-    r.setAttribute('font-family', 'sans-serif');
-    r.setAttribute('font-size', '12');
     r.setAttribute('data-side', 'R');
     r.setAttribute('data-row',  String(i));
     r.textContent = defaultLabel('R', i);
@@ -284,8 +274,6 @@ function makePin(side, row, x) {
   t.setAttribute('y', String(row * 25));
   t.setAttribute('text-anchor', side === 'L' ? 'start' : 'end');
   t.setAttribute('dominant-baseline', 'middle');
-  t.setAttribute('font-family', 'sans-serif');
-  t.setAttribute('font-size', '12');
   t.setAttribute('data-side', side);
   t.setAttribute('data-row',  String(row));
   t.textContent = defaultLabel(side, row);
@@ -398,9 +386,6 @@ export function createVddComponent(x, y) {
   txtEl.setAttribute('class', 'vdd-label');
   txtEl.setAttribute('y', '-15');
   txtEl.setAttribute('text-anchor', 'middle');
-  txtEl.setAttribute('font-family', 'sans-serif');
-  txtEl.setAttribute('font-size', '12');
-  txtEl.setAttribute('font-weight', 'bold');
   txtEl.textContent = 'VDD';
   g.appendChild(txtEl);
 
@@ -433,9 +418,6 @@ export function createPassiveComponent(type, x, y) {
   txtEl.setAttribute('x', '15');
   txtEl.setAttribute('y', '-15');
   txtEl.setAttribute('text-anchor', 'start');
-  txtEl.setAttribute('font-family', 'sans-serif');
-  txtEl.setAttribute('font-size', '12');
-  txtEl.setAttribute('font-weight', 'bold');
   txtEl.textContent = '';
   g.appendChild(txtEl);
 
