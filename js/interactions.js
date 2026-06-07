@@ -282,6 +282,16 @@
         if (btn) btn.click();
       }
 
+      /* ---- r key: rotate selected passive component 0 ↔ 90 ---- */
+      if (evt.key === "r" || evt.key === "R") {
+        const el = global.appState.selected;
+        if (el && el.classList && el.classList.contains("passive-component")) {
+          const currentRot = parseInt(el.getAttribute("data-rotate") || "0", 10);
+          const newRot = currentRot === 0 ? 90 : 0;
+          global.updateComponent(el, { rotatePassive: newRot });
+        }
+      }
+
       /* ---- x, Backspace, Delete: delete selected element ---- */
       if (evt.key === 'x' || evt.key === 'X' || evt.key === 'Backspace' || evt.key === 'Delete') {
         const el = global.appState.selected;
