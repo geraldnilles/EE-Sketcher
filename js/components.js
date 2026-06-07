@@ -52,9 +52,6 @@ export function createComponent(x, y, width, rows) {
   rect.setAttribute('y', '-25');
   rect.setAttribute('width',  String(width));
   rect.setAttribute('height', String((rows + 1) * 25));
-  rect.setAttribute('fill',   '#ffffff');
-  rect.setAttribute('stroke', '#000000');
-  rect.setAttribute('stroke-width', '2');
   g.appendChild(rect);
 
   // Top label (centered above the rect)

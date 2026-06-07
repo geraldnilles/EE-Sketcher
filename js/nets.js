@@ -23,9 +23,6 @@ export function newLineEl(x1, y1, x2, y2, idOpt) {
   ln.setAttribute('y1', String(y1));
   ln.setAttribute('x2', String(x2));
   ln.setAttribute('y2', String(y2));
-  ln.setAttribute('stroke', '#000000');
-  ln.setAttribute('stroke-width', '2');
-  ln.setAttribute('stroke-linecap', 'square');
   if (idOpt) ln.setAttribute('data-id', idOpt);
   else       ln.setAttribute('data-id', uid('net'));
   return ln;
