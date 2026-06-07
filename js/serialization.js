@@ -163,6 +163,69 @@ function reattachHits(svgRoot) {
 }
 
 /** exportSchema() — returns serialized SVG string. */
+
+/** formatSVG() - pretty prints serialized SVG string with line breaks and indenting. */
+function formatSVG(xmlString) {
+  let formatted = '';
+  let indent = '';
+  const tab = '  '; // 2 spaces
+
+  // Split into tokens (tags, style contents, text content)
+  const tokens = xmlString.match(/(<\/?[^>]+>|[^<]+)/g) || [];
+
+  let insideStyle = false;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i].trim();
+    if (!token) continue;
+
+    if (token.startsWith('<?xml')) {
+      formatted += token + '\n';
+    } else if (token.startsWith('<!--')) {
+      // Comment
+      formatted += indent + token + '\n';
+    } else if (token.startsWith('<style') || token.startsWith('<style ')) {
+      formatted += indent + token + '\n';
+      indent += tab;
+      insideStyle = true;
+    } else if (token === '</style>') {
+      indent = indent.substring(tab.length);
+      formatted += indent + token + '\n';
+      insideStyle = false;
+    } else if (insideStyle) {
+      const lines = token.split('\n').map(l => l.trim()).filter(l => l !== '');
+      for (const line of lines) {
+        if (line.startsWith('/*')) {
+          formatted += indent + line + '\n';
+        } else if (line.endsWith('{')) {
+          formatted += indent + line + '\n';
+          indent += tab;
+        } else if (line.startsWith('}')) {
+          indent = indent.substring(tab.length);
+          formatted += indent + line + '\n';
+        } else {
+          formatted += indent + line + '\n';
+        }
+      }
+    } else if (token.startsWith('</')) {
+      // Closing tag
+      indent = indent.substring(tab.length);
+      formatted += indent + token + '\n';
+    } else if (token.startsWith('<') && (token.endsWith('/>') || token.endsWith('-->'))) {
+      // Self-closing tag or comment-like
+      formatted += indent + token + '\n';
+    } else if (token.startsWith('<') && !token.endsWith('/>')) {
+      // Opening tag
+      formatted += indent + token + '\n';
+      indent += tab;
+    } else {
+      // Plain text (like text nodes)
+      formatted += indent + token + '\n';
+    }
+  }
+  return formatted.trim();
+}
+
 export function exportSchema() {
   const svg = document.getElementById('canvas');
   if (!svg) return '';
@@ -175,7 +238,8 @@ export function exportSchema() {
   clone.setAttribute('viewBox', '0 0 1500 1000');
   clone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   const xml = new XMLSerializer().serializeToString(clone);
-  return '<?xml version="1.0" encoding="UTF-8"?>\n' + xml;
+  const rawSvg = '<?xml version="1.0" encoding="UTF-8"?>\n' + xml;
+  return formatSVG(rawSvg);
 }
 
 /** importSchema(text) — parses and replaces canvas content. */
