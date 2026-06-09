@@ -261,6 +261,14 @@ input[type="text"]:focus, textarea:focus {
   stroke: rgba(37, 99, 235, 0.45);
 }
 
+/* In connect mode, endpoint hit rects should keep the crosshair cursor */
+#canvas.mode-connect .endpoint-hit {
+  cursor: crosshair;
+}
+#canvas.mode-connect .endpoint-hit:hover {
+  cursor: crosshair;
+}
+
 /* =========== Sidebar =========== */
 .sidebar {
   background: var(--bg-panel);

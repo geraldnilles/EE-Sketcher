@@ -33,6 +33,7 @@ from test_deletion    import run as run_deletion
 from test_viewport    import run as run_viewport
 from test_portal      import run as run_portal
 from test_integration import run as run_integration
+from test_pointer   import run as run_pointer
 
 
 ALL_SUITES = {
@@ -45,6 +46,7 @@ ALL_SUITES = {
     "deletion":    ("Element Deletion", run_deletion),
     "viewport":    ("Viewport Zoom & Pan", run_viewport),
     "portal":      ("Data Portal Export/Import", run_portal),
+    "pointer":     ("Pointer / Cursor Behavior", run_pointer),
     "integration": ("End-to-End Integration", run_integration),
 }
 
