@@ -30,7 +30,10 @@ export function newLineEl(x1, y1, x2, y2, idOpt) {
 
 /**
  * Create a small rect that acts as a drag handle for one endpoint.
- * @param {SVGLineElement} line  parent line (used to read coords)
+ * The rect is a SIBLING of the line (not a child) because <line>
+ * elements cannot have rendered children per the SVG spec.
+ *
+ * @param {SVGLineElement} line  parent line (used to read coords & data-id)
  * @param {'start'|'end'}  which
  * @returns {SVGRectElement}
  */
@@ -38,6 +41,7 @@ export function newEndpointHit(line, which) {
   const SIZE = 14;
   const x = (which === 'start') ? +line.getAttribute('x1') : +line.getAttribute('x2');
   const y = (which === 'start') ? +line.getAttribute('y1') : +line.getAttribute('y2');
+  const netId = line.getAttribute('data-id');
   const r = document.createElementNS(SVG_NS, 'rect');
   r.setAttribute('class', 'endpoint-hit');
   r.setAttribute('x', String(x - SIZE / 2));
@@ -45,5 +49,37 @@ export function newEndpointHit(line, which) {
   r.setAttribute('width',  String(SIZE));
   r.setAttribute('height', String(SIZE));
   r.setAttribute('data-endpoint', which);
+  r.setAttribute('data-net-id', netId);
   return r;
+}
+
+/**
+ * Find the endpoint-hit rect for a given line and endpoint.
+ * @param {SVGLineElement} line
+ * @param {'start'|'end'} which
+ * @returns {SVGRectElement|null}
+ */
+export function findEndpointHit(line, which) {
+  const netId = line.getAttribute('data-id');
+  if (!netId) return null;
+  const layer = document.getElementById('nets-layer');
+  if (!layer) return null;
+  return layer.querySelector(
+    `rect.endpoint-hit[data-net-id="${netId}"][data-endpoint="${which}"]`
+  );
+}
+
+/**
+ * Find both endpoint-hit rects for a given line.
+ * @param {SVGLineElement} line
+ * @returns {SVGRectElement[]}
+ */
+export function findAllEndpointHits(line) {
+  const netId = line.getAttribute('data-id');
+  if (!netId) return [];
+  const layer = document.getElementById('nets-layer');
+  if (!layer) return [];
+  return Array.from(layer.querySelectorAll(
+    `rect.endpoint-hit[data-net-id="${netId}"]`
+  ));
 }

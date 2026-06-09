@@ -5,7 +5,7 @@
 
 import { endpointsKey } from '../geometry.js';
 import { readLineCoords } from './net-interaction.js';
-import { newLineEl, newEndpointHit } from './net-factory.js';
+import { newLineEl, newEndpointHit, findEndpointHit, findAllEndpointHits } from './net-factory.js';
 import { appState } from '../state.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -60,17 +60,20 @@ export function splitAllLines() {
 
         if (pointOnSegmentInterior(ex, ey, x1, y1, x2, y2)) {
           const origId = ln.getAttribute('data-id');
+
+          // Remove endpoint-hit rects of the original line
+          findAllEndpointHits(ln).forEach((h) => h.remove());
           ln.remove();
 
           const a = newLineEl(x1, y1, ex, ey, origId);
-          a.appendChild(newEndpointHit(a, 'start'));
-          a.appendChild(newEndpointHit(a, 'end'));
           layer.appendChild(a);
+          layer.appendChild(newEndpointHit(a, 'start'));
+          layer.appendChild(newEndpointHit(a, 'end'));
 
           const b = newLineEl(ex, ey, x2, y2, null);
-          b.appendChild(newEndpointHit(b, 'start'));
-          b.appendChild(newEndpointHit(b, 'end'));
           layer.appendChild(b);
+          layer.appendChild(newEndpointHit(b, 'start'));
+          layer.appendChild(newEndpointHit(b, 'end'));
 
           splitOccurred = true;
           didSplit = true;
@@ -114,14 +117,6 @@ function isCollinearPair(lineA, lineB) {
   return false;
 }
 
-function moveHitRect(line, which, x, y) {
-  const hit = line.querySelector('rect.endpoint-hit[data-endpoint="' + which + '"]');
-  if (!hit) return;
-  const SIZE = 14;
-  hit.setAttribute('x', String(x - SIZE / 2));
-  hit.setAttribute('y', String(y - SIZE / 2));
-}
-
 export function extendLineTo(line, which, x, y) {
   if (which === 'start') {
     line.setAttribute('x1', String(x));
@@ -130,7 +125,13 @@ export function extendLineTo(line, which, x, y) {
     line.setAttribute('x2', String(x));
     line.setAttribute('y2', String(y));
   }
-  moveHitRect(line, which, x, y);
+  // Reposition the sibling endpoint-hit rect
+  const hit = findEndpointHit(line, which);
+  if (hit) {
+    const SIZE = 14;
+    hit.setAttribute('x', String(x - SIZE / 2));
+    hit.setAttribute('y', String(y - SIZE / 2));
+  }
 }
 
 /**
@@ -216,6 +217,8 @@ export function mergeLines() {
         if (appState && appState.selected === b) {
           appState.selected = a;
         }
+        // Remove endpoint-hit rects of the absorbed line
+        findAllEndpointHits(b).forEach((h) => h.remove());
         if (b.parentNode) b.parentNode.removeChild(b);
 
         didMerge = true;

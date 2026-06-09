@@ -5,6 +5,7 @@
 
 import { snap, clamp } from '../state.js';
 import { WORLD_W, WORLD_H } from '../viewport.js';
+import { findEndpointHit, findAllEndpointHits } from './net-factory.js';
 
 /* ---- DOM readers ---- */
 
@@ -39,7 +40,9 @@ export function setEndpoint(line, which, x, y) {
   line.setAttribute('y1', String(c.y1));
   line.setAttribute('x2', String(c.x2));
   line.setAttribute('y2', String(c.y2));
-  const hit = line.querySelector('rect.endpoint-hit[data-endpoint="' + which + '"]');
+
+  // Reposition the sibling endpoint-hit rect
+  const hit = findEndpointHit(line, which);
   if (hit) {
     const SIZE = 14;
     hit.setAttribute('x', String((which === 'start' ? c.x1 : c.x2) - SIZE / 2));
@@ -52,25 +55,33 @@ export function setEndpoint(line, which, x, y) {
  * If the line is horizontal, both Ys change; if vertical, both Xs.
  */
 export function shiftLineForEndpointDrag(line, which, x, y) {
+  // Reshape the line by moving only the dragged endpoint,
+  // enforcing orthogonality. Same logic as setEndpoint.
   x = snap(x); y = snap(y);
   x = clamp(x, 0, WORLD_W);
   y = clamp(y, 0, WORLD_H);
   const c = readLineCoords(line);
-  const isHoriz = (c.y1 === c.y2), isVert = (c.x1 === c.x2);
-  if (!isHoriz && !isVert) return;
-
-  if (isHoriz) {
-    if (which === 'start') { c.y1 = y; c.y2 = y; }
-    else                   { c.y1 = y; c.y2 = y; }
-  } else if (isVert) {
-    if (which === 'start') { c.x1 = x; c.x2 = x; }
-    else                   { c.x1 = x; c.x2 = x; }
+  // Move the dragged endpoint
+  if (which === 'start') { c.x1 = x; c.y1 = y; }
+  else                   { c.x2 = x; c.y2 = y; }
+  // Enforce orthogonality: pick the shorter axis deviation
+  if (c.x1 !== c.x2 && c.y1 !== c.y2) {
+    const dx = Math.abs(c.x2 - c.x1), dy = Math.abs(c.y2 - c.y1);
+    if (dx >= dy) {
+      if (which === 'start') c.y1 = c.y2;
+      else                   c.y2 = c.y1;
+    } else {
+      if (which === 'start') c.x1 = c.x2;
+      else                   c.x2 = c.x1;
+    }
   }
   line.setAttribute('x1', String(c.x1));
   line.setAttribute('y1', String(c.y1));
   line.setAttribute('x2', String(c.x2));
   line.setAttribute('y2', String(c.y2));
-  line.querySelectorAll('rect.endpoint-hit').forEach((h) => {
+
+  // Reposition sibling endpoint-hit rects
+  findAllEndpointHits(line).forEach((h) => {
     const SIZE = 14;
     const which2 = h.getAttribute('data-endpoint');
     const hx = (which2 === 'start') ? c.x1 : c.x2;

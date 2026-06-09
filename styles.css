@@ -254,6 +254,7 @@ input[type="text"]:focus, textarea:focus {
   fill: transparent;
   stroke: transparent;
   cursor: grab;
+  pointer-events: fill;
 }
 .endpoint-hit:hover {
   fill: rgba(37, 99, 235, 0.18);

@@ -8,6 +8,7 @@
 
 import { snap, clamp, appState, setMode } from './state.js';
 import { createLine, deleteLine, refreshNetTopology, recomputeJunctions } from './nets.js';
+import { findEndpointHit } from './nets/net-factory.js';
 import { findLineNearPoint, shiftLineForEndpointDrag } from './nets/net-interaction.js';
 import { validateNewLine } from './nets/net-validation.js';
 import { readOrigin, setOrigin, updateComponent, deleteComponent } from './components.js';
@@ -170,7 +171,9 @@ export function initInteractions() {
         try { tgt.el.setPointerCapture(evt.pointerId); } catch (_) {}
         setSelection(tgt.el);
       } else if (tgt.kind === 'endpoint') {
-        const line = tgt.el.parentNode;
+        // Endpoint-hit rects are siblings of the line, look up by data-net-id
+        const netId = tgt.el.getAttribute('data-net-id');
+        const line = document.querySelector('line.net-line[data-id="' + netId + '"]');
         const which = tgt.el.getAttribute('data-endpoint');
         st.dragging = { kind: 'endpoint', el: line, which: which };
         svg.classList.add('is-dragging');

@@ -8,11 +8,11 @@ import { WORLD_W, WORLD_H }                from '../viewport.js';
 import { isOrtho }                         from '../geometry.js';
 import { validateNewLine }                 from './net-validation.js';
 import { refreshNetTopology }              from './net-topology.js';
-import { newLineEl, newEndpointHit }       from './net-factory.js';
+import { newLineEl, newEndpointHit, findAllEndpointHits } from './net-factory.js';
 
 /**
  * Create a horizontal or vertical net segment, validate it,
- * add it to the DOM, and refresh topology.
+ * add it to the DOM (with sibling endpoint-hit rects), and refresh topology.
  */
 export function createLine(x1, y1, x2, y2) {
   x1 = snap(x1); y1 = snap(y1);
@@ -32,17 +32,23 @@ export function createLine(x1, y1, x2, y2) {
 
   const ln = newLineEl(x1, y1, x2, y2);
   layer.appendChild(ln);
-  ln.appendChild(newEndpointHit(ln, 'start'));
-  ln.appendChild(newEndpointHit(ln, 'end'));
+  // Endpoint-hit rects are siblings (not children) so they are visible/clickable
+  layer.appendChild(newEndpointHit(ln, 'start'));
+  layer.appendChild(newEndpointHit(ln, 'end'));
 
   refreshNetTopology();
   return ln;
 }
 
-/** Remove a line from the DOM, update state, and refresh topology. */
+/** Remove a line AND its associated endpoint-hit rects from the DOM. */
 export function deleteLine(lineEl) {
   if (!lineEl) return;
   if (lineEl === appState.selected) appState.selected = null;
+
+  // Remove associated endpoint-hit rects
+  const hits = findAllEndpointHits(lineEl);
+  hits.forEach((h) => h.remove());
+
   lineEl.remove();
   refreshNetTopology();
   window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: null } }));
