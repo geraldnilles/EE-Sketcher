@@ -7,7 +7,9 @@
    ===================================================================== */
 
 import { snap, clamp, appState, setMode } from './state.js';
-import { findLineNearPoint, createLine, deleteLine, refreshNetTopology, recomputeJunctions, shiftLineForEndpointDrag, validateNewLine } from './nets.js';
+import { createLine, deleteLine, refreshNetTopology, recomputeJunctions } from './nets.js';
+import { findLineNearPoint, shiftLineForEndpointDrag } from './nets/net-interaction.js';
+import { validateNewLine } from './nets/net-validation.js';
 import { readOrigin, setOrigin, updateComponent, deleteComponent } from './components.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';

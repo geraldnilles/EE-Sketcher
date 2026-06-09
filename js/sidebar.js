@@ -6,7 +6,8 @@
 
 import { appState } from './state.js';
 import { readLabels, getRows, getWidth, updateComponent, deleteComponent, readOrigin } from './components.js';
-import { readLineCoords, deleteLine } from './nets.js';
+import { deleteLine } from './nets.js';
+import { readLineCoords } from './nets/net-interaction.js';
 
 export function el(tag, attrs, children) {
   const n = document.createElement(tag);
