@@ -61,11 +61,56 @@ export function getComponentRects() {
     if (g.classList.contains('passive-component')) {
       const o = readOrigin(g);
       const rot = g.getAttribute('data-rotate') || '0';
-      if (rot === '90') {
-        out.push({ x: o.x - 15, y: o.y - 50, w: 30, h: 100, el: g });
-      } else {
-        out.push({ x: o.x - 50, y: o.y - 15, w: 100, h: 30, el: g });
+
+      // Read actual pin offsets from the <defs> template so the bounding
+      // rect adapts to any symbol, not just the old 100-wide defaults.
+      const type = g.getAttribute('data-type') || '';
+      const defEl = type ? document.getElementById(type) : null;
+      let p1x = -50, p1y = 0, p2x = 50, p2y = 0;
+      if (defEl) {
+        const a = (defEl.getAttribute('data-pin1') || '-50,0').split(',');
+        const b = (defEl.getAttribute('data-pin2') || '50,0').split(',');
+        p1x = parseInt(a[0], 10) || -50;  p1y = parseInt(a[1], 10) || 0;
+        p2x = parseInt(b[0], 10) || 50;   p2y = parseInt(b[1], 10) || 0;
       }
+
+      const MARGIN = 15;  // body thickness perpendicular to the pin axis
+
+      // Determine the long (pin-to-pin) axis and build a bounding rect.
+      let rx, ry, rw, rh;
+      if (rot === '90') {
+        // Symbol is rotated 90° — swap the axis roles.
+        if (p1y === p2y) {
+          // Pins originally on a horizontal line → after rotation they're vertical.
+          ry = Math.min(p1x, p2x);
+          rh = Math.abs(p2x - p1x);
+          rx = p1y - MARGIN;
+          rw = 2 * MARGIN;
+        } else {
+          // Pins originally on a vertical line → after rotation they're horizontal.
+          rx = Math.min(p1y, p2y);
+          rw = Math.abs(p2y - p1y);
+          ry = p1x - MARGIN;
+          rh = 2 * MARGIN;
+        }
+      } else {
+        // Normal (0°) orientation.
+        if (p1y === p2y) {
+          // Horizontal pins.
+          rx = Math.min(p1x, p2x);
+          rw = Math.abs(p2x - p1x);
+          ry = p1y - MARGIN;
+          rh = 2 * MARGIN;
+        } else {
+          // Vertical pins.
+          ry = Math.min(p1y, p2y);
+          rh = Math.abs(p2y - p1y);
+          rx = p1x - MARGIN;
+          rw = 2 * MARGIN;
+        }
+      }
+
+      out.push({ x: o.x + rx, y: o.y + ry, w: rw, h: rh, el: g });
       return;
     }
 
