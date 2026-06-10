@@ -22,6 +22,19 @@ function defaultLabel(side, row) {
  *   rows    : integer >= 1
  * Returns the <g class="generic-component"> element.
  */
+/**
+ * appendComponentToLayer(g)
+ *   Shared helper: appends a new component <g> element to the components
+ *   layer and triggers a net-topology refresh.  Used by all four
+ *   factory functions to avoid duplicated boilerplate.
+ */
+function appendComponentToLayer(g) {
+  const layer = document.getElementById('components-layer');
+  if (layer) layer.appendChild(g);
+  if (refreshNetTopology) refreshNetTopology();
+  return g;
+}
+
 export function createComponent(x, y, width, rows) {
   if (typeof x !== 'number' || typeof y !== 'number') {
     throw new Error('createComponent: x,y must be numbers');
@@ -105,11 +118,7 @@ export function createComponent(x, y, width, rows) {
   g.setAttribute('data-label-top', '');
   g.setAttribute('data-label-bottom', '');
 
-  const layer = document.getElementById('components-layer');
-  if (layer) layer.appendChild(g);
-
-  if (refreshNetTopology) refreshNetTopology();
-  return g;
+  return appendComponentToLayer(g);
 }
 
 export function getRows(el) {
@@ -142,56 +151,62 @@ function setRectSize(g, width, rows) {
 }
 
 /**
- * updateComponent(el, patch)
+ * updatePassiveComponent(el, patch)
+ *   Handles label and rotation updates for passive components
+ *   (resistor, capacitor, inductor).  Called by updateComponent().
  */
-export function updateComponent(el, patch) {
-  if (!el || !el.classList.contains('generic-component')) return;
-  if (!patch || typeof patch !== 'object') return;
+function updatePassiveComponent(el, patch) {
+  if (typeof patch.labelPassive === 'string') {
+    const txtEl = el.querySelector('text.passive-label');
+    if (txtEl) txtEl.textContent = patch.labelPassive;
+    el.setAttribute('data-label', patch.labelPassive);
+  }
+  if (patch.rotatePassive !== undefined) {
+    const rot = String(patch.rotatePassive);
+    const useEl = el.querySelector('use');
+    if (useEl) useEl.setAttribute('transform', `rotate(${rot})`);
+    el.setAttribute('data-rotate', rot);
 
-  if (el.classList.contains('passive-component')) {
-    if (typeof patch.labelPassive === 'string') {
-      const txtEl = el.querySelector('text.passive-label');
-      if (txtEl) txtEl.textContent = patch.labelPassive;
-      el.setAttribute('data-label', patch.labelPassive);
-    }
-    if (patch.rotatePassive !== undefined) {
-      const rot = String(patch.rotatePassive);
-      const useEl = el.querySelector('use');
-      if (useEl) useEl.setAttribute('transform', `rotate(${rot})`);
-      el.setAttribute('data-rotate', rot);
-
-      const txtEl = el.querySelector('text.passive-label');
-      if (txtEl) {
-        if (rot === '90') {
-          txtEl.setAttribute('x', '20');
-          txtEl.setAttribute('y', '0');
-          txtEl.setAttribute('text-anchor', 'start');
-        } else {
-          txtEl.setAttribute('x', '15');
-          txtEl.setAttribute('y', '-15');
-          txtEl.setAttribute('text-anchor', 'start');
-        }
+    const txtEl = el.querySelector('text.passive-label');
+    if (txtEl) {
+      if (rot === '90') {
+        txtEl.setAttribute('x', '20');
+        txtEl.setAttribute('y', '0');
+        txtEl.setAttribute('text-anchor', 'start');
+      } else {
+        txtEl.setAttribute('x', '15');
+        txtEl.setAttribute('y', '-15');
+        txtEl.setAttribute('text-anchor', 'start');
       }
     }
-    if (refreshNetTopology) refreshNetTopology();
-    if (patch.rotatePassive !== undefined && appState && appState.selected === el) {
-      window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: el } }));
-    }
-    return;
   }
-
-  if (el.classList.contains('vdd-component')) {
-    if (typeof patch.labelVdd === 'string') {
-      const txtEl = el.querySelector('text.vdd-label');
-      if (txtEl) txtEl.textContent = patch.labelVdd;
-      el.setAttribute('data-label', patch.labelVdd);
-    }
-    if (refreshNetTopology) refreshNetTopology();
-    return;
+  if (refreshNetTopology) refreshNetTopology();
+  if (patch.rotatePassive !== undefined && appState && appState.selected === el) {
+    window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: el } }));
   }
+}
 
-  let rows  = getRows(el);
-  let width = getWidth(el);
+/**
+ * updateVddComponent(el, patch)
+ *   Handles label updates for VDD power-bus components.
+ *   Called by updateComponent().
+ */
+function updateVddComponent(el, patch) {
+  if (typeof patch.labelVdd === 'string') {
+    const txtEl = el.querySelector('text.vdd-label');
+    if (txtEl) txtEl.textContent = patch.labelVdd;
+    el.setAttribute('data-label', patch.labelVdd);
+  }
+  if (refreshNetTopology) refreshNetTopology();
+}
+
+/**
+ * applyStructuralPatch(el, patch, rows, width)
+ *   Applies expand / contract / addRow / removeRow mutations to a
+ *   generic block component.  Handles pin-row reconciliation and
+ *   SVG rect resizing.  Returns { rows, width, structuralChanged }.
+ */
+function applyStructuralPatch(el, patch, rows, width) {
   let structuralChanged = false;
 
   // Mutation helpers -----------------------------------------------------
@@ -228,6 +243,33 @@ export function updateComponent(el, patch) {
     setRectSize(el, width, rows);
     structuralChanged = true;
   }
+
+  return { rows, width, structuralChanged };
+}
+
+/**
+ * updateComponent(el, patch)
+ */
+export function updateComponent(el, patch) {
+  if (!el || !el.classList.contains('generic-component')) return;
+  if (!patch || typeof patch !== 'object') return;
+
+  if (el.classList.contains('passive-component')) {
+    updatePassiveComponent(el, patch);
+    return;
+  }
+
+  if (el.classList.contains('vdd-component')) {
+    updateVddComponent(el, patch);
+    return;
+  }
+
+  let rows  = getRows(el);
+  let width = getWidth(el);
+  const result = applyStructuralPatch(el, patch, rows, width);
+  rows = result.rows;
+  width = result.width;
+  const structuralChanged = result.structuralChanged;
 
   // Label patches
   if (typeof patch.labelTop === 'string') {
@@ -359,11 +401,7 @@ export function createGndComponent(x, y) {
   useEl.setAttribute('href', '#gnd');
   g.appendChild(useEl);
 
-  const layer = document.getElementById('components-layer');
-  if (layer) layer.appendChild(g);
-
-  if (refreshNetTopology) refreshNetTopology();
-  return g;
+  return appendComponentToLayer(g);
 }
 
 export function createVddComponent(x, y) {
@@ -387,11 +425,7 @@ export function createVddComponent(x, y) {
   txtEl.textContent = 'VDD';
   g.appendChild(txtEl);
 
-  const layer = document.getElementById('components-layer');
-  if (layer) layer.appendChild(g);
-
-  if (refreshNetTopology) refreshNetTopology();
-  return g;
+  return appendComponentToLayer(g);
 }
 
 export function createPassiveComponent(type, x, y) {
@@ -419,9 +453,5 @@ export function createPassiveComponent(type, x, y) {
   txtEl.textContent = '';
   g.appendChild(txtEl);
 
-  const layer = document.getElementById('components-layer');
-  if (layer) layer.appendChild(g);
-
-  if (refreshNetTopology) refreshNetTopology();
-  return g;
+  return appendComponentToLayer(g);
 }
