@@ -342,6 +342,7 @@ export function setOrigin(el, x, y) {
     x = clamp(x, 0, WORLD_W - w);
     y = clamp(y, 25, WORLD_H - rows * 25);
   }
+  x = snap(x); y = snap(y);
   el.setAttribute('transform', 'translate(' + x + ' ' + y + ')');
 }
 
