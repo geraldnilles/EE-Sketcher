@@ -381,7 +381,7 @@ export function createVddComponent(x, y) {
 
   const txtEl = document.createElementNS(SVG_NS, 'text');
   txtEl.setAttribute('class', 'vdd-label');
-  txtEl.setAttribute('y', '-15');
+  txtEl.setAttribute('y', '-5');
   txtEl.setAttribute('text-anchor', 'middle');
   txtEl.textContent = 'VDD';
   g.appendChild(txtEl);
