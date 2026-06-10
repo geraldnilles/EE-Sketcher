@@ -347,7 +347,7 @@ export function setOrigin(el, x, y) {
 
 export function createGndComponent(x, y) {
   x = clamp(snap(x), 15, WORLD_W - 15);
-  y = clamp(snap(y), 0, WORLD_H - 25);
+  y = clamp(snap(y), 0, WORLD_H - 15);
 
   const g = document.createElementNS(SVG_NS, 'g');
   g.setAttribute('class', 'generic-component gnd-component');
