@@ -18,3 +18,5 @@ For testing, you can write PYTHON_COMMAND code blocks to drive my browser and te
 On this machine, Chrome is most likely already running with debug port 9876 enabled. You can luanch the app and test it there.
 
 On this machine, the `server.sh` is likely already running so you can access the webapp by openning `http://localhost:8080/`
+
+You may also refer to the `./test/` for a suite of tests to run after changes to ensure nothing broke.
