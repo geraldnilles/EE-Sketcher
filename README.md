@@ -183,6 +183,13 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for t
 
 ---
 
-## For Developers
+## TODOs
 
-Implementation details, architecture documentation, and the full technical specification are in [SPEC.md](SPEC.md).
+- Add a Diode Symbol
+- Add a Text Boxes for annotation
+- Add Rectangular Containers
+    - Background layer, behind all the other components and nets
+- Select Area to Drag
+- Duplicate Componet
+- Crop to component area
+

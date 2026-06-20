@@ -11,3 +11,10 @@ You will help me break down a large, brittle vanilla WebApp (HTML, JS, CSS) into
 
 **Git Usage:** This repo is verson controlled with git.  You may use this to view the history and revert changes (i.e. git checkout).  However, you are not perimitted to commit changes, reset, or modify branches unless you are explicity instructed to do so by the user.  
 
+**Testing:**
+
+For testing, you can write PYTHON_COMMAND code blocks to drive my browser and test the webapp. `playwright` is already installed in the `venv`.
+
+On this machine, Chrome is most likely already running with debug port 9876 enabled. You can luanch the app and test it there.
+
+On this machine, the `server.sh` is likely already running so you can access the webapp by openning `http://localhost:8080/`
