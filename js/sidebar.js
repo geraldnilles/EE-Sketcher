@@ -72,6 +72,26 @@ function renderComponentPanel(body, g) {
   ]);
   body.appendChild(bottomRow);
 
+  // Secondary checkbox
+  const isSecondary = g.getAttribute('data-secondary') === 'true';
+  const secondaryRow = el('div', { style: 'margin-bottom: 8px;' }, [
+    el('label', { style: 'font-size: 11px; color: #666; display: flex; align-items: center; gap: 6px; cursor: pointer;' }, [
+      el('input', {
+        type: 'checkbox',
+        checked: isSecondary,
+        onchange: (e) => {
+          if (e.target.checked) {
+            g.setAttribute('data-secondary', 'true');
+          } else {
+            g.removeAttribute('data-secondary');
+          }
+        },
+      }),
+      'Secondary (grey fill)'
+    ])
+  ]);
+  body.appendChild(secondaryRow);
+
   // Pin inputs (two-column grid)
   const grid = el('div', { class: 'pin-grid' });
   grid.appendChild(el('div', { class: 'pin-label' }, ['Pin Labels (left / right)']));
