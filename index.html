@@ -41,8 +41,8 @@
 /* Core Diagram Styles for Standalone Portability — static only */
 .component-body {
   fill: #ffffff;
-  stroke: #000000;
-  stroke-width: 2;
+  stroke: var(--comp-stroke, #000000);
+  stroke-width: var(--comp-stroke-width, 2);
   rx: 6px;
   ry: 6px;
   stroke-linecap: round;

@@ -212,6 +212,17 @@ input[type="text"]:focus, textarea:focus {
   stroke-width: 2.5 !important;
 }
 
+/* Hover highlight via custom properties – crosses <use> shadow boundary */
+.generic-component:hover {
+  --comp-stroke: var(--accent);
+}
+
+/* Selection highlight via custom properties – crosses <use> shadow boundary */
+.is-selected {
+  --comp-stroke: var(--accent);
+  --comp-stroke-width: 2.5;
+}
+
 .generic-component:hover use {
   stroke: var(--accent);
 }
@@ -221,8 +232,16 @@ input[type="text"]:focus, textarea:focus {
 }
 
 .net-line { transition: stroke .12s ease, stroke-width .12s ease; }
-.net-line:hover { stroke: var(--accent); }
-.is-selected.net-line { stroke: var(--accent); stroke-width: 2.5; }
+.net-line:hover {
+  stroke: var(--accent);
+  --comp-stroke: var(--accent);
+}
+.is-selected.net-line {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  --comp-stroke: var(--accent);
+  --comp-stroke-width: 2.5;
+}
 
 /* junction dot */
 .junction {
