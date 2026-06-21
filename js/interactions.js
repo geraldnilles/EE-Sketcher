@@ -9,7 +9,7 @@
 import { snap, clamp, appState, setMode } from './state.js';
 import { createLine, deleteLine, refreshNetTopology, recomputeJunctions } from './nets.js';
 import { findEndpointHit } from './nets/net-factory.js';
-import { findLineNearPoint, shiftLineForEndpointDrag } from './nets/net-interaction.js';
+import { readLineCoords, findLineNearPoint, shiftLineForEndpointDrag } from './nets/net-interaction.js';
 import { validateNewLine } from './nets/net-validation.js';
 import { readOrigin, setOrigin, updateComponent, deleteComponent } from './components.js';
 
@@ -133,6 +133,58 @@ export function initInteractions() {
         setOrigin(d.el, d.ox + (gp.x - d.startX), d.oy + (gp.y - d.startY));
       } else if (d.kind === 'endpoint') {
         shiftLineForEndpointDrag(d.el, d.which, gp.x, gp.y);
+      } else if (d.kind === 'multi-drag') {
+        const dx = gp.x - d.startX;
+        const dy = gp.y - d.startY;
+
+        for (let i = 0; i < d.elements.length; i++) {
+          const item = d.elements[i];
+          if (item.kind === 'component') {
+            setOrigin(item.el, item.ox + dx, item.oy + dy);
+          } else if (item.kind === 'line') {
+            const nx1 = item.x1 + dx;
+            const ny1 = item.y1 + dy;
+            const nx2 = item.x2 + dx;
+            const ny2 = item.y2 + dy;
+            item.el.setAttribute('x1', String(nx1));
+            item.el.setAttribute('y1', String(ny1));
+            item.el.setAttribute('x2', String(nx2));
+            item.el.setAttribute('y2', String(ny2));
+
+            // Synchronize the invisible companion endpoint hit targets
+            const netId = item.el.getAttribute('data-id');
+            const hits = document.querySelectorAll('rect.endpoint-hit[data-net-id="' + netId + '"]');
+            hits.forEach(h => {
+              const SIZE = 14;
+              const which = h.getAttribute('data-endpoint');
+              const hx = (which === 'start') ? nx1 : nx2;
+              const hy = (which === 'start') ? ny1 : ny2;
+              h.setAttribute('x', String(hx - SIZE / 2));
+              h.setAttribute('y', String(hy - SIZE / 2));
+            });
+          }
+        }
+      } else if (d.kind === 'box-select') {
+        const p = svgPoint(evt);
+        const overlay = document.getElementById('overlay-layer');
+        if (overlay) {
+          overlay.innerHTML = '';
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          const x = Math.min(d.startX, p.x);
+          const y = Math.min(d.startY, p.y);
+          const width = Math.abs(d.startX - p.x);
+          const height = Math.abs(d.startY - p.y);
+
+          rect.setAttribute('x', String(x));
+          rect.setAttribute('y', String(y));
+          rect.setAttribute('width', String(width));
+          rect.setAttribute('height', String(height));
+          rect.setAttribute('fill', 'rgba(37, 99, 235, 0.1)');
+          rect.setAttribute('stroke', 'var(--accent)');
+          rect.setAttribute('stroke-width', '1');
+          rect.setAttribute('stroke-dasharray', '4 4');
+          overlay.appendChild(rect);
+        }
       }
       return;
     }
@@ -158,20 +210,47 @@ export function initInteractions() {
     if (st.mode === 'drag') tgt = pickLineWithTolerance(evt, tgt);
 
     if (st.mode === 'drag') {
-      if (tgt.kind === 'component') {
-        const o = readOrigin(tgt.el);
+      // 1. If Ctrl is held, don't start dragging; let the click listener handle selection toggling
+      if (evt.ctrlKey) return;
+
+      if (tgt.kind === 'component' || tgt.kind === 'line') {
+        // 2. If the clicked element isn't already selected, treat it as a new single selection
+        if (!tgt.el.classList.contains('is-selected')) {
+          clearSelection();
+          tgt.el.classList.add('is-selected');
+          st.selected = tgt.el;
+          window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: st.selected } }));
+        }
+
+        // Capture initial positions of ALL elements in the selected group
         const gp = pointerToGrid(evt);
+        const selectedEls = Array.from(document.querySelectorAll('.is-selected'));
+        const dragElements = [];
+
+        for (let i = 0; i < selectedEls.length; i++) {
+          const el = selectedEls[i];
+          if (el.classList.contains('generic-component')) {
+            const o = readOrigin(el);
+            dragElements.push({ el, kind: 'component', ox: o.x, oy: o.y });
+          } else if (el.classList.contains('net-line')) {
+            const coords = readLineCoords(el);
+            dragElements.push({ el, kind: 'line', x1: coords.x1, y1: coords.y1, x2: coords.x2, y2: coords.y2 });
+          }
+        }
+
         st.dragging = {
-          kind: 'component',
-          el: tgt.el,
-          ox: o.x, oy: o.y,
-          startX: gp.x, startY: gp.y,
+          kind: 'multi-drag',
+          startX: gp.x,
+          startY: gp.y,
+          elements: dragElements
         };
+
         svg.classList.add('is-dragging');
         try { tgt.el.setPointerCapture(evt.pointerId); } catch (_) {}
-        setSelection(tgt.el);
+        return;
+
       } else if (tgt.kind === 'endpoint') {
-        // Endpoint-hit rects are siblings of the line, look up by data-net-id
+        // Keep existing standalone endpoint drag logic intact
         const netId = tgt.el.getAttribute('data-net-id');
         const line = document.querySelector('line.net-line[data-id="' + netId + '"]');
         const which = tgt.el.getAttribute('data-endpoint');
@@ -179,19 +258,84 @@ export function initInteractions() {
         svg.classList.add('is-dragging');
         try { tgt.el.setPointerCapture(evt.pointerId); } catch (_) {}
         setSelection(line);
-      } else if (tgt.kind === 'line') {
-        setSelection(tgt.el);
+        return;
+
+      } else if (tgt.kind === 'canvas') {
+        // 3. Start a marquee box selection from the exact mouse coordinates
+        const p = svgPoint(evt);
+        st.dragging = {
+          kind: 'box-select',
+          startX: p.x,
+          startY: p.y
+        };
+        svg.classList.add('is-dragging');
+        clearSelection();
+        return;
       }
-      return;
     }
   });
 
-  function endDrag() {
+  function endDrag(evt) {
     const st = appState;
     if (st.dragging) {
+      // Set a flag so the subsequent click event doesn't undo the drag result
+      appState.justDragged = true;
+      if (st.dragging.kind === 'box-select') {
+        const overlay = document.getElementById('overlay-layer');
+        if (overlay) overlay.innerHTML = '';
+
+        // Check if we have a valid pointer up event object to calculate intersections
+        if (evt) {
+          const p = svgPoint(evt);
+          const d = st.dragging;
+          const x1 = Math.min(d.startX, p.x);
+          const y1 = Math.min(d.startY, p.y);
+          const x2 = Math.max(d.startX, p.x);
+          const y2 = Math.max(d.startY, p.y);
+
+          // getBBox() returns local coordinates. Add translate from parent <g> transform.
+          const getWorldBounds = (el) => {
+            const bbox = el.getBBox();
+            const transform = el.getAttribute('transform') || '';
+            const m = /translate\(\s*(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)\s*\)/.exec(transform);
+            let tx = 0, ty = 0;
+            if (m) {
+              tx = parseFloat(m[1]);
+              ty = parseFloat(m[2]);
+            }
+            return {
+              bx1: bbox.x + tx,
+              by1: bbox.y + ty,
+              bx2: bbox.x + tx + bbox.width,
+              by2: bbox.y + ty + bbox.height
+            };
+          };
+
+          // Query and highlight overlapping components
+          document.querySelectorAll('.generic-component').forEach(el => {
+            const b = getWorldBounds(el);
+            if (x1 <= b.bx2 && x2 >= b.bx1 && y1 <= b.by2 && y2 >= b.by1) {
+              el.classList.add('is-selected');
+              st.selected = el;
+            }
+          });
+
+          // Query and highlight overlapping net wires
+          document.querySelectorAll('line.net-line').forEach(el => {
+            const b = getWorldBounds(el);
+            if (x1 <= b.bx2 && x2 >= b.bx1 && y1 <= b.by2 && y2 >= b.by1) {
+              el.classList.add('is-selected');
+              st.selected = el;
+            }
+          });
+
+          window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: st.selected } }));
+        }
+      }
+
       st.dragging = null;
       svg.classList.remove('is-dragging');
-      
+
       if (refreshNetTopology) {
         refreshNetTopology();
       } else if (recomputeJunctions) {
@@ -199,9 +343,9 @@ export function initInteractions() {
       }
     }
   }
-  svg.addEventListener('pointerup',     endDrag);
-  svg.addEventListener('pointercancel', endDrag);
-  svg.addEventListener('pointerleave',  () => { if (appState.dragging) endDrag(); });
+  svg.addEventListener('pointerup',     (evt) => endDrag(evt));
+  svg.addEventListener('pointercancel', (evt) => endDrag(evt));
+  svg.addEventListener('pointerleave',  () => { /* pointerup/pointercancel handle drag end */ });
 
   /* ---- click ---- */
   svg.addEventListener('click', (evt) => {
@@ -234,6 +378,31 @@ export function initInteractions() {
       return;
     }
 
+    // Handle Ctrl+Click Accumulative Toggling
+    if (evt.ctrlKey) {
+      if (tgt.kind === 'component' || tgt.kind === 'line') {
+        if (tgt.el.classList.contains('is-selected')) {
+          tgt.el.classList.remove('is-selected');
+          // If the primary sidebar target was unselected, fall back to another selected element
+          if (st.selected === tgt.el) {
+            st.selected = document.querySelector('.is-selected');
+          }
+        } else {
+          tgt.el.classList.add('is-selected');
+          st.selected = tgt.el;
+        }
+        window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: st.selected } }));
+      }
+      return;
+    }
+
+    // After a drag operation (including box-select), don't alter selection
+    if (st.justDragged) {
+      st.justDragged = false;
+      return;
+    }
+
+    // Regular click selection behavior
     if (tgt.kind === 'component' || tgt.kind === 'line') {
       setSelection(tgt.el);
     } else {
