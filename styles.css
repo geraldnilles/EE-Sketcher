@@ -432,3 +432,25 @@ button-row {
   font-size: 13px;
   fill: #333333;
 }
+
+/* ===== Container component styling ===== */
+.container-body {
+  fill: #ffffff;
+  stroke: var(--comp-stroke, #6b7280);
+  stroke-width: var(--comp-stroke-width, 2);
+  stroke-dasharray: 6 4;
+  rx: 8px;
+  ry: 8px;
+  pointer-events: all;
+  transition: stroke 0.12s ease, stroke-width 0.12s ease;
+}
+
+.container-component:hover .container-body {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.is-selected .container-body {
+  stroke: var(--accent) !important;
+  stroke-width: 2.5 !important;
+}

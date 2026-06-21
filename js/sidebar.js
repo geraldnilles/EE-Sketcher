@@ -5,7 +5,7 @@
    ===================================================================== */
 
 import { appState } from './state.js';
-import { readLabels, getRows, getWidth, updateComponent, deleteComponent, readOrigin, readCommentLines, getCommentLinesCount } from './components.js';
+import { readLabels, getRows, getWidth, getHeight, updateComponent, deleteComponent, readOrigin, readCommentLines, getCommentLinesCount } from './components.js';
 import { deleteLine } from './nets.js';
 import { readLineCoords } from './nets/net-interaction.js';
 
@@ -251,6 +251,75 @@ function renderVddPanel(body, g) {
 }
 
 
+function renderContainerPanel(body, g) {
+  clear(body);
+  const width = getWidth(g);
+  const height = getHeight(g);
+  const currentFill = g.getAttribute('data-fill') || '#ffffff';
+
+  body.appendChild(el('h3', { style: 'margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--fg-secondary);' }, ['Layer Container']));
+
+  // Width controls
+  const widthLabel = el('div', { style: 'margin-bottom: 4px;' }, [
+    el('label', { style: 'font-size: 11px; color: #666;' }, ['Width: ' + width + ' units'])
+  ]);
+  body.appendChild(widthLabel);
+
+  const widthBtns = el('div', { class: 'btn-row', style: 'margin-bottom: 8px;' }, [
+    el('button', { onclick: () => updateComponent(g, { expand: true }) }, ['Expand (+50)']),
+    el('button', {
+      onclick: () => updateComponent(g, { contract: true }),
+      disabled: width <= 50,
+    }, ['Contract (-50)']),
+  ]);
+  body.appendChild(widthBtns);
+
+  // Height controls
+  const heightLabel = el('div', { style: 'margin-bottom: 4px;' }, [
+    el('label', { style: 'font-size: 11px; color: #666;' }, ['Height: ' + height + ' units'])
+  ]);
+  body.appendChild(heightLabel);
+
+  const heightBtns = el('div', { class: 'btn-row', style: 'margin-bottom: 8px;' }, [
+    el('button', { onclick: () => updateComponent(g, { expandVert: true }) }, ['Grow Tall (+50)']),
+    el('button', {
+      onclick: () => updateComponent(g, { contractVert: true }),
+      disabled: height <= 50,
+    }, ['Shrink (-50)']),
+  ]);
+  body.appendChild(heightBtns);
+
+  // Fill Color dropdown
+  const fillRow = el('div', { style: 'margin-bottom: 8px;' }, [
+    el('label', { style: 'font-size: 11px; color: #666; display: block; margin-bottom: 2px;' }, ['Fill Color']),
+    el('select', {
+      style: 'width: 100%; padding: 4px; border-radius: var(--radius);',
+      onchange: (e) => updateComponent(g, { fillColor: e.target.value })
+    }, [
+      el('option', { value: '#ffffff', selected: currentFill === '#ffffff' }, ['Canvas White']),
+      el('option', { value: '#f3f4f6', selected: currentFill === '#f3f4f6' }, ['Studio Gray']),
+      el('option', { value: '#dbeafe', selected: currentFill === '#dbeafe' }, ['Logic Blue']),
+      el('option', { value: '#dcfce7', selected: currentFill === '#dcfce7' }, ['Signal Green']),
+      el('option', { value: '#fef9c3', selected: currentFill === '#fef9c3' }, ['Power Yellow']),
+      el('option', { value: '#fee2e2', selected: currentFill === '#fee2e2' }, ['Hot Red']),
+    ]),
+  ]);
+  body.appendChild(fillRow);
+
+  const o = readOrigin(g);
+  body.appendChild(el('pre', { class: 'meta' }, [
+    `Position: (${o.x}, ${o.y})\nWidth: ${width}  Height: ${height}\nFill: ${currentFill}`
+  ]));
+
+  body.appendChild(el('button', {
+    class: 'danger',
+    style: 'width: 100%; margin-top: 4px;',
+    onclick: () => deleteComponent(g),
+    title: 'Delete Container  [x / Backspace / Delete]',
+  }, ['Delete Container']));
+}
+
+
 function renderCommentPanel(body, g) {
   clear(body);
   const lines = readCommentLines(g);
@@ -345,6 +414,9 @@ export function renderSidebar() {
   if (sel.classList && sel.classList.contains('generic-component')) {
     if (sel.classList.contains('comment-component')) {
       return renderCommentPanel(body, sel);
+    }
+    if (sel.classList.contains('container-component')) {
+      return renderContainerPanel(body, sel);
     }
     if (sel.classList.contains('passive-component')) {
       return renderPassivePanel(body, sel);

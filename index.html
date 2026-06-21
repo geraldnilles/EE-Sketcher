@@ -18,6 +18,7 @@
       </div>
       <div class="toolbar-actions">
         <button type="button" id="add-component-btn" title="Add Component (A)">+ Component</button>
+        <button type="button" id="add-container-btn" title="Add Layer Container">+ Container</button>
         <button type="button" id="add-comment-btn" title="Add Text Comment">+ Comment</button>
         <button type="button" id="add-gnd-btn" title="Add GND (G)">+ GND</button>
         <button type="button" id="add-vdd-btn" title="Add VDD (V)">+ VDD</button>
@@ -117,6 +118,9 @@
           <g class="grid-overlay" pointer-events="none">
             <rect x="0" y="0" width="1500" height="1000" fill="url(#grid-coarse)"/>
           </g>
+
+          <!-- Layer 0.5: containers (background grouping rectangles) -->
+          <g class="containers" id="containers-layer"></g>
 
           <!-- Layer 1: nets (lines) -->
           <g class="nets" id="nets-layer"></g>

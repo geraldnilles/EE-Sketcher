@@ -58,6 +58,20 @@ function snapImportedCoords(root) {
       if (m) g.setAttribute('transform', `translate(${snap(+m[1])} ${snap(+m[2])})`);
       return;
     }
+    if (g.classList.contains('container-component')) {
+      const m = /translate\(\s*(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)\s*\)/.exec(g.getAttribute('transform') || '');
+      if (m) g.setAttribute('transform', `translate(${snap(+m[1])} ${snap(+m[2])})`);
+      const w = parseInt(g.getAttribute('data-width') || '200', 10);
+      const h = parseInt(g.getAttribute('data-height') || '150', 10);
+      const fill = g.getAttribute('data-fill') || '#ffffff';
+      const rect = g.querySelector('rect.container-body');
+      if (rect) {
+        rect.setAttribute('width', String(Math.max(50, Math.round(w / 50) * 50)));
+        rect.setAttribute('height', String(Math.max(50, Math.round(h / 50) * 50)));
+        rect.setAttribute('fill', fill);
+      }
+      return;
+    }
     if (g.classList.contains('gnd-component') || g.classList.contains('passive-component')) return;
     const m = /translate\(\s*(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)\s*\)/.exec(g.getAttribute('transform') || '');
     if (m) {
@@ -266,13 +280,14 @@ export function importSchema(text) {
   const live = document.getElementById('canvas');
   if (!live) throw new Error('Live canvas missing.');
 
-  ['nets-layer', 'components-layer', 'junctions-layer', 'overlay-layer'].forEach((id) => {
+  ['containers-layer', 'nets-layer', 'components-layer', 'junctions-layer', 'overlay-layer'].forEach((id) => {
     const n = document.getElementById(id);
     if (n) n.innerHTML = '';
   });
 
   const impNets      = svg.querySelector('g.nets');
   const impComps     = svg.querySelector('g.components');
+  const impContainers = svg.querySelector('g.containers');
   const impJunctions = svg.querySelector('g.junctions');
 
   function adopt(srcLayer, destId) {
@@ -283,6 +298,7 @@ export function importSchema(text) {
       dest.appendChild(adopted);
     });
   }
+  adopt(impContainers, 'containers-layer');
   adopt(impNets,      'nets-layer');
   adopt(impComps,     'components-layer');
   adopt(impJunctions, 'junctions-layer');
@@ -293,6 +309,19 @@ export function importSchema(text) {
   // Ensure all imported components have data-id
   liveSvg.querySelectorAll('g.generic-component').forEach((g) => {
     if (g.classList.contains('gnd-component')) return;
+    if (g.classList.contains('container-component')) {
+      if (!g.getAttribute('data-id')) g.setAttribute('data-id', uid('cmp'));
+      if (!g.getAttribute('data-width')) g.setAttribute('data-width', '200');
+      if (!g.getAttribute('data-height')) g.setAttribute('data-height', '150');
+      if (!g.getAttribute('data-fill')) g.setAttribute('data-fill', '#ffffff');
+      const cr = g.querySelector('rect.container-body');
+      if (cr) {
+        cr.setAttribute('width', g.getAttribute('data-width'));
+        cr.setAttribute('height', g.getAttribute('data-height'));
+        cr.setAttribute('fill', g.getAttribute('data-fill'));
+      }
+      return;
+    }
     if (g.classList.contains('vdd-component')) {
       if (!g.getAttribute('data-id')) g.setAttribute('data-id', uid('cmp'));
       if (!g.getAttribute('data-label')) {

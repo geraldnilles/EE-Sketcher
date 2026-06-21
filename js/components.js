@@ -140,6 +140,38 @@ export function createComponent(x, y, width, rows) {
 
 
 /**
+ * createContainerComponent(x, y)
+ *   x, y : grid coords for the top-left corner of the container rect.
+ * Returns the <g class="generic-component container-component"> element
+ * which renders behind nets and components as a background grouping box.
+ */
+export function createContainerComponent(x, y) {
+  x = clamp(snap(x), 0, WORLD_W - 200);
+  y = clamp(snap(y), 0, WORLD_H - 150);
+
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('class', 'generic-component container-component');
+  g.setAttribute('transform', `translate(${snap(x)} ${snap(y)})`);
+  g.setAttribute('data-id', uid('cmp'));
+  g.setAttribute('data-width', '200');
+  g.setAttribute('data-height', '150');
+  g.setAttribute('data-fill', '#ffffff');
+
+  const rect = document.createElementNS(SVG_NS, 'rect');
+  rect.setAttribute('class', 'component-body container-body');
+  rect.setAttribute('x', '0');
+  rect.setAttribute('y', '0');
+  rect.setAttribute('width', '200');
+  rect.setAttribute('height', '150');
+  g.appendChild(rect);
+
+  const layer = document.getElementById('containers-layer');
+  if (layer) layer.appendChild(g);
+  // Containers do NOT participate in net routing, so no refreshNetTopology() call.
+  return g;
+}
+
+/**
  * createCommentComponent(x, y)
  *   x, y : grid coords for the top-left corner of the comment rect.
  * Returns the <g class="generic-component comment-component"> element.
@@ -181,6 +213,9 @@ export function getRows(el) {
 }
 export function getWidth(el) {
   return parseInt(el.getAttribute('data-width') || '100', 10);
+}
+export function getHeight(el) {
+  return parseInt(el.getAttribute('data-height') || '150', 10);
 }
 
 function setRectSize(g, width, rows) {
@@ -324,6 +359,11 @@ export function updateComponent(el, patch) {
     return;
   }
 
+  if (el.classList.contains('container-component')) {
+    updateContainerComponent(el, patch);
+    return;
+  }
+
   let rows  = getRows(el);
   let width = getWidth(el);
   const result = applyStructuralPatch(el, patch, rows, width);
@@ -366,6 +406,56 @@ export function updateComponent(el, patch) {
   }
 }
 
+
+/**
+ * updateContainerComponent(el, patch)
+ *   Handles size (expand/contract/expandVert/contractVert) and fillColor
+ *   mutations for container components.  Called by updateComponent().
+ */
+function updateContainerComponent(el, patch) {
+  let structuralChanged = false;
+
+  const minWidth = 50, minHeight = 50;
+  let width = parseInt(el.getAttribute('data-width') || '200', 10);
+  let height = parseInt(el.getAttribute('data-height') || '150', 10);
+
+  if (patch.expand) {
+    width = Math.min(2000, width + 50);
+    structuralChanged = true;
+  }
+  if (patch.contract) {
+    width = Math.max(minWidth, width - 50);
+    structuralChanged = true;
+  }
+  if (patch.expandVert) {
+    height = Math.min(2000, height + 50);
+    structuralChanged = true;
+  }
+  if (patch.contractVert) {
+    height = Math.max(minHeight, height - 50);
+    structuralChanged = true;
+  }
+
+  if (structuralChanged) {
+    el.setAttribute('data-width', String(width));
+    el.setAttribute('data-height', String(height));
+    const rect = el.querySelector('rect.container-body');
+    if (rect) {
+      rect.setAttribute('width', String(width));
+      rect.setAttribute('height', String(height));
+    }
+  }
+
+  if (typeof patch.fillColor === 'string') {
+    el.setAttribute('data-fill', patch.fillColor);
+    const rect = el.querySelector('rect.container-body');
+    if (rect) rect.setAttribute('fill', patch.fillColor);
+  }
+
+  if (structuralChanged && appState && appState.selected === el) {
+    window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: el } }));
+  }
+}
 
 /**
  * updateCommentComponent(el, patch)
@@ -501,6 +591,11 @@ export function setOrigin(el, x, y) {
     const lines = getCommentLinesCount(el);
     x = clamp(x, 0, WORLD_W - 150);
     y = clamp(y, 25, WORLD_H - lines * 25);
+  } else if (el.classList.contains('container-component')) {
+    const w = parseInt(el.getAttribute('data-width') || '200', 10);
+    const h = parseInt(el.getAttribute('data-height') || '150', 10);
+    x = clamp(x, 0, WORLD_W - w);
+    y = clamp(y, 0, WORLD_H - h);
   } else {
     // Clamp position so the entire component stays within the world bounds.
     // Rect spans x..x+width in X, and y-25..y+rows*25 in Y.
