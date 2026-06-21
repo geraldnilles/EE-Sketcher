@@ -100,7 +100,7 @@ function init() {
   }
 
   /* ---- + Resistor / Capacitor / Inductor buttons ---- */
-  ['resistor', 'capacitor', 'inductor'].forEach((type) => {
+  ['resistor', 'capacitor', 'inductor', 'diode'].forEach((type) => {
     const btn = $(`add-${type}-btn`);
     if (btn) {
       btn.addEventListener('click', () => {

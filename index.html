@@ -23,6 +23,7 @@
         <button type="button" id="add-resistor-btn" title="Add Resistor">+ Resistor</button>
         <button type="button" id="add-capacitor-btn" title="Add Capacitor">+ Capacitor</button>
         <button type="button" id="add-inductor-btn" title="Add Inductor">+ Inductor</button>
+        <button type="button" id="add-diode-btn" title="Add Diode">+ Diode</button>
       </div>
     </header>
 
@@ -102,6 +103,10 @@
             <g id="capacitor" data-pin1="-25,0" data-pin2="25,0" class="component-body">
               <rect x="-25" y="-25" width="50" height="50" fill="none" stroke="none" pointer-events="all"/>
               <path d="M 25,0 H 10 M 10,-20 V 20 M -10,-20 V 20 M -10,0 H -25"/>
+            </g>
+            <g id="diode" data-pin1="-25,0" data-pin2="25,0" class="component-body">
+              <rect x="-25" y="-25" width="50" height="50" fill="none" stroke="none" pointer-events="all"/>
+              <path d="M 25,0 H 6 M 6,-14 V 14 M -8,-14 L 6,0 L -8,14 Z M -25,0 H -8"/>
             </g>
           </defs>
           <!-- Background -->

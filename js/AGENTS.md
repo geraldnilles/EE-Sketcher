@@ -18,7 +18,7 @@ Wires up UI button click behaviors, manages initialization ordering, and binds c
 * **Scale Limits:** Bound between `0.1x` and `8.0x`.
 
 ### `components.js` (Component Lifecycle Manager)
-* Handles instantiation structures for Generic Blocks, `GND`, `VDD`, and Passive references (`resistor`, `capacitor`, `inductor`).
+* Handles instantiation structures for Generic Blocks, `GND`, `VDD`, and Passive references (`resistor`, `capacitor`, `inductor`, `diode`).
 * **Generic Block Dimensional Calculations:**
     $$\text{Height} = (N_{\text{rows}} + 1) \times 25$$
     Internal tracking rectangle uses a fixed offset of `y="-25"`. Width values must step by clean multiples of `50`.
