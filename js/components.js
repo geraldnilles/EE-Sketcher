@@ -170,7 +170,7 @@ export function createCommentComponent(x, y) {
   line.setAttribute('x', '5');
   line.setAttribute('y', '17');
   line.setAttribute('dominant-baseline', 'middle');
-  line.textContent = '';
+  line.textContent = 'Comment';
   g.appendChild(line);
 
   return appendComponentToLayer(g);

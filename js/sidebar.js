@@ -271,6 +271,28 @@ function renderCommentPanel(body, g) {
           updated[i] = e.target.value;
           updateComponent(g, { lines: updated });
         },
+        onkeydown: (e) => {
+          if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && i === lines.length - 1) {
+            e.preventDefault();
+            g.__enterAddingLine = true;
+            updateComponent(g, { addLine: true });
+            // Sidebar re-rendered synchronously — find and focus the new last input
+            const newInputs = body.querySelectorAll('input[type="text"]');
+            const lastInput = newInputs[newInputs.length - 1];
+            if (lastInput) lastInput.focus();
+            // Clear flag after focus is set (next blur from re-render will skip delete)
+            g.__enterAddingLine = false;
+          }
+        },
+        onblur: () => {
+          // Auto-delete comment if all lines are blank.
+          // Skip when blur was caused by Enter-to-add-line re-render.
+          if (g.__enterAddingLine) return;
+          const allLines = readCommentLines(g);
+          if (allLines.every(txt => !txt || txt.trim() === '')) {
+            deleteComponent(g);
+          }
+        },
       }),
     ]);
     body.appendChild(lineRow);
