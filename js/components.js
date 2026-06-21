@@ -438,7 +438,6 @@ export function updateComponent(el, patch) {
  */
 function updateContainerComponent(el, patch) {
   let structuralChanged = false;
-  let needsSidebarRefresh = false;
 
   const minWidth = 50, minHeight = 50;
   let width = parseInt(el.getAttribute('data-width') || '200', 10);
@@ -481,23 +480,20 @@ function updateContainerComponent(el, patch) {
     const topLabel = el.querySelector('text.label-top');
     if (topLabel) topLabel.textContent = patch.labelTop;
     el.setAttribute('data-label-top', patch.labelTop);
-    needsSidebarRefresh = true;
   }
   if (typeof patch.labelBottom === 'string') {
     const bottomLabel = el.querySelector('text.label-bottom');
     if (bottomLabel) bottomLabel.textContent = patch.labelBottom;
     el.setAttribute('data-label-bottom', patch.labelBottom);
-    needsSidebarRefresh = true;
   }
 
   if (typeof patch.fillColor === 'string') {
     el.setAttribute('data-fill', patch.fillColor);
     const rect = el.querySelector('rect.container-body');
     if (rect) rect.style.fill = patch.fillColor;
-    needsSidebarRefresh = true;
   }
 
-  if ((structuralChanged || needsSidebarRefresh) && appState && appState.selected === el) {
+  if (structuralChanged && appState && appState.selected === el) {
     window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: el } }));
   }
 }
