@@ -54,7 +54,7 @@ export function getComponentRects() {
   const out = [];
   layer.querySelectorAll('g.generic-component').forEach((g) => {
     // power references are ignored by the net validator
-    if (g.classList.contains('gnd-component') || g.classList.contains('vdd-component')) {
+    if (g.classList.contains('gnd-component') || g.classList.contains('vdd-component') || g.classList.contains('comment-component')) {
       return;
     }
 

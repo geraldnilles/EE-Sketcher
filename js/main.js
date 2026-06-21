@@ -9,7 +9,7 @@
 
 import { appState, setMode, snap } from './state.js';
 import { initViewport, getViewBox } from './viewport.js';
-import { createComponent, createGndComponent, createVddComponent, createPassiveComponent } from './components.js';
+import { createComponent, createCommentComponent, createGndComponent, createVddComponent, createPassiveComponent } from './components.js';
 import { initInteractions } from './interactions.js';
 import { initSidebar, renderSidebar } from './sidebar.js';
 import { exportSchema, importSchema } from './serialization.js';
@@ -50,6 +50,26 @@ function init() {
         _vy = snap(vb.y + vb.h / 2);
       }
       const g = createComponent(_vx, _vy, 100, 2);
+      if (g) {
+        document.querySelectorAll('.is-selected').forEach((e) => e.classList.remove('is-selected'));
+        g.classList.add('is-selected');
+        appState.selected = g;
+        window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: g } }));
+      }
+    });
+  }
+
+  /* ---- + Comment button ---- */
+  const commentBtn = $('add-comment-btn');
+  if (commentBtn) {
+    commentBtn.addEventListener('click', () => {
+      let vx = 100, vy = 100;
+      if (getViewBox) {
+        const vb = getViewBox();
+        vx = snap(vb.x + vb.w / 2);
+        vy = snap(vb.y + vb.h / 2);
+      }
+      const g = createCommentComponent(vx, vy);
       if (g) {
         document.querySelectorAll('.is-selected').forEach((e) => e.classList.remove('is-selected'));
         g.classList.add('is-selected');

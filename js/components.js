@@ -35,6 +35,23 @@ function appendComponentToLayer(g) {
   return g;
 }
 
+
+/** Get the number of text lines in a comment component. */
+export function getCommentLinesCount(el) {
+  return parseInt(el.getAttribute('data-lines') || '1', 10);
+}
+
+/** Read all text lines from a comment component. */
+export function readCommentLines(el) {
+  const lines = [];
+  const count = getCommentLinesCount(el);
+  for (let i = 0; i < count; i++) {
+    const t = el.querySelector(`text.comment-line[data-line-idx="${i}"]`);
+    lines.push(t ? t.textContent : '');
+  }
+  return lines;
+}
+
 export function createComponent(x, y, width, rows) {
   if (typeof x !== 'number' || typeof y !== 'number') {
     throw new Error('createComponent: x,y must be numbers');
@@ -117,6 +134,44 @@ export function createComponent(x, y, width, rows) {
   g.setAttribute('data-rows',  String(rows));
   g.setAttribute('data-label-top', '');
   g.setAttribute('data-label-bottom', '');
+
+  return appendComponentToLayer(g);
+}
+
+
+/**
+ * createCommentComponent(x, y)
+ *   x, y : grid coords for the top-left corner of the comment rect.
+ * Returns the <g class="generic-component comment-component"> element.
+ */
+export function createCommentComponent(x, y) {
+  x = clamp(snap(x), 0, WORLD_W - 150);
+  y = clamp(snap(y), 25, WORLD_H - 25);
+
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('class', 'generic-component comment-component');
+  g.setAttribute('transform', `translate(${snap(x)} ${snap(y)})`);
+  g.setAttribute('data-id', uid('cmp'));
+  g.setAttribute('data-lines', '1');
+
+  // Background rect — a light gray annotation block with dashed borders
+  const rect = document.createElementNS(SVG_NS, 'rect');
+  rect.setAttribute('class', 'component-body comment-body');
+  rect.setAttribute('x', '0');
+  rect.setAttribute('y', '0');
+  rect.setAttribute('width', '150');
+  rect.setAttribute('height', '25');
+  g.appendChild(rect);
+
+  // Initial empty text line
+  const line = document.createElementNS(SVG_NS, 'text');
+  line.setAttribute('class', 'comment-line');
+  line.setAttribute('data-line-idx', '0');
+  line.setAttribute('x', '5');
+  line.setAttribute('y', '17');
+  line.setAttribute('dominant-baseline', 'middle');
+  line.textContent = '';
+  g.appendChild(line);
 
   return appendComponentToLayer(g);
 }
@@ -264,6 +319,11 @@ export function updateComponent(el, patch) {
     return;
   }
 
+  if (el.classList.contains('comment-component')) {
+    updateCommentComponent(el, patch);
+    return;
+  }
+
   let rows  = getRows(el);
   let width = getWidth(el);
   const result = applyStructuralPatch(el, patch, rows, width);
@@ -302,6 +362,63 @@ export function updateComponent(el, patch) {
   if (refreshNetTopology) refreshNetTopology();
 
   if (structuralChanged && appState && appState.selected === el) {
+    window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: el } }));
+  }
+}
+
+
+/**
+ * updateCommentComponent(el, patch)
+ *   Handles addLine / removeLine / lines mutations for comment components.
+ */
+function updateCommentComponent(el, patch) {
+  if (patch.addLine) {
+    const lines = getCommentLinesCount(el) + 1;
+    el.setAttribute('data-lines', String(lines));
+
+    // Append new text element
+    const newIdx = lines - 1;
+    const t = document.createElementNS(SVG_NS, 'text');
+    t.setAttribute('class', 'comment-line');
+    t.setAttribute('data-line-idx', String(newIdx));
+    t.setAttribute('x', '5');
+    t.setAttribute('y', String(newIdx * 25 + 17));
+    t.setAttribute('dominant-baseline', 'middle');
+    t.textContent = '';
+    el.appendChild(t);
+
+    // Resize background rect
+    const rect = el.querySelector('rect.comment-body');
+    if (rect) rect.setAttribute('height', String(lines * 25));
+  }
+
+  if (patch.removeLine) {
+    const current = getCommentLinesCount(el);
+    if (current <= 1) return; // keep at least one line
+    const newCount = current - 1;
+    el.setAttribute('data-lines', String(newCount));
+
+    // Remove text nodes with index >= newCount
+    el.querySelectorAll('text.comment-line').forEach((t) => {
+      const idx = parseInt(t.getAttribute('data-line-idx'), 10);
+      if (idx >= newCount) t.remove();
+    });
+
+    // Resize background rect
+    const rect = el.querySelector('rect.comment-body');
+    if (rect) rect.setAttribute('height', String(newCount * 25));
+  }
+
+  if (Array.isArray(patch.lines)) {
+    patch.lines.forEach((txt, i) => {
+      const node = el.querySelector(`text.comment-line[data-line-idx="${i}"]`);
+      if (node) node.textContent = String(txt);
+    });
+  }
+
+  if (refreshNetTopology) refreshNetTopology();
+
+  if (appState && appState.selected === el) {
     window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: el } }));
   }
 }
@@ -376,6 +493,10 @@ export function setOrigin(el, x, y) {
   } else if (el.classList.contains('vdd-component')) {
     x = clamp(x, 15, WORLD_W - 15);
     y = clamp(y, 30, WORLD_H); // Allows space for top label
+  } else if (el.classList.contains('comment-component')) {
+    const lines = getCommentLinesCount(el);
+    x = clamp(x, 0, WORLD_W - 150);
+    y = clamp(y, 25, WORLD_H - lines * 25);
   } else {
     // Clamp position so the entire component stays within the world bounds.
     // Rect spans x..x+width in X, and y-25..y+rows*25 in Y.

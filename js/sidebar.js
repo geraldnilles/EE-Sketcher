@@ -5,7 +5,7 @@
    ===================================================================== */
 
 import { appState } from './state.js';
-import { readLabels, getRows, getWidth, updateComponent, deleteComponent, readOrigin } from './components.js';
+import { readLabels, getRows, getWidth, updateComponent, deleteComponent, readOrigin, readCommentLines, getCommentLinesCount } from './components.js';
 import { deleteLine } from './nets.js';
 import { readLineCoords } from './nets/net-interaction.js';
 
@@ -250,6 +250,55 @@ function renderVddPanel(body, g) {
   }, ['Delete Component']));
 }
 
+
+function renderCommentPanel(body, g) {
+  clear(body);
+  const lines = readCommentLines(g);
+
+  body.appendChild(el('h3', { style: 'margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--fg-secondary);' }, ['Text Comment']));
+
+  // Render an input field for each line
+  for (let i = 0; i < lines.length; i++) {
+    const lineRow = el('div', { style: 'margin-bottom: 6px;' }, [
+      el('label', { style: 'font-size: 11px; color: #666; display: block; margin-bottom: 2px;' }, [`Line ${i + 1}`]),
+      el('input', {
+        type: 'text',
+        value: lines[i] || '',
+        placeholder: 'Comment text...',
+        style: 'width: 100%; box-sizing: border-box;',
+        oninput: (e) => {
+          const updated = readCommentLines(g);
+          updated[i] = e.target.value;
+          updateComponent(g, { lines: updated });
+        },
+      }),
+    ]);
+    body.appendChild(lineRow);
+  }
+
+  // Add / Remove line buttons
+  const rowBtns = el('div', { class: 'btn-row', style: 'margin-bottom: 8px;' }, [
+    el('button', { onclick: () => updateComponent(g, { addLine: true }) }, ['+ Line']),
+    el('button', {
+      onclick: () => updateComponent(g, { removeLine: true }),
+      disabled: lines.length <= 1,
+    }, ['- Line']),
+  ]);
+  body.appendChild(rowBtns);
+
+  const o = readOrigin(g);
+  body.appendChild(el('pre', { class: 'meta' }, [
+    `Position: (${o.x}, ${o.y})\nLines: ${lines.length}`,
+  ]));
+
+  body.appendChild(el('button', {
+    class: 'danger',
+    style: 'width: 100%; margin-top: 4px;',
+    onclick: () => deleteComponent(g),
+    title: 'Delete Comment  [x / Backspace / Delete]',
+  }, ['Delete Comment']));
+}
+
 function renderLinePanel(body, line) {
   clear(body);
   const c = readLineCoords(line);
@@ -272,6 +321,9 @@ export function renderSidebar() {
   const sel = appState.selected;
   if (!sel) return renderEmpty(body);
   if (sel.classList && sel.classList.contains('generic-component')) {
+    if (sel.classList.contains('comment-component')) {
+      return renderCommentPanel(body, sel);
+    }
     if (sel.classList.contains('passive-component')) {
       return renderPassivePanel(body, sel);
     }

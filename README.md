@@ -185,7 +185,6 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for t
 
 ## TODOs
 
-- Add a Diode Symbol
 - Add a Text Boxes for annotation
 - Add Rectangular Containers
     - Background layer, behind all the other components and nets

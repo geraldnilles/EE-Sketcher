@@ -53,6 +53,11 @@ function snapImportedCoords(root) {
   });
   // Snap component transforms
   root.querySelectorAll('g.generic-component').forEach((g) => {
+    if (g.classList.contains('comment-component')) {
+      const m = /translate\(\s*(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)\s*\)/.exec(g.getAttribute('transform') || '');
+      if (m) g.setAttribute('transform', `translate(${snap(+m[1])} ${snap(+m[2])})`);
+      return;
+    }
     if (g.classList.contains('gnd-component') || g.classList.contains('passive-component')) return;
     const m = /translate\(\s*(-?\d+(?:\.\d+)?)\s*,?\s*(-?\d+(?:\.\d+)?)\s*\)/.exec(g.getAttribute('transform') || '');
     if (m) {
@@ -120,7 +125,7 @@ function validate(doc) {
   }
 
   svg.querySelectorAll('g.generic-component').forEach((g) => {
-    if (g.classList.contains('gnd-component') || g.classList.contains('vdd-component') || g.classList.contains('passive-component')) return;
+    if (g.classList.contains('gnd-component') || g.classList.contains('vdd-component') || g.classList.contains('passive-component') || g.classList.contains('comment-component')) return;
     const rect = g.querySelector('rect.component-body');
     if (!rect) throw new Error('Imported component missing <rect class="component-body">');
     const rows = parseInt(g.getAttribute('data-rows') || '0', 10);
@@ -310,6 +315,14 @@ export function importSchema(text) {
         const useTrans = g.querySelector('use')?.getAttribute('transform') || '';
         const m = /rotate\(\s*(\d+)\s*\)/.exec(useTrans);
         g.setAttribute('data-rotate', m ? m[1] : '0');
+      }
+      return;
+    }
+    if (g.classList.contains('comment-component')) {
+      if (!g.getAttribute('data-id')) g.setAttribute('data-id', uid('cmp'));
+      if (!g.getAttribute('data-lines')) {
+        const textLines = g.querySelectorAll('text.comment-line');
+        g.setAttribute('data-lines', String(textLines.length || 1));
       }
       return;
     }
