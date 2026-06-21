@@ -187,7 +187,6 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for t
 
 - Add Rectangular Containers
     - Background layer, behind all the other components and nets
-- Select Area to Drag
 - Duplicate Componet
 - Crop to component area
 
