@@ -372,7 +372,10 @@ export function updateComponent(el, patch) {
  *   Handles addLine / removeLine / lines mutations for comment components.
  */
 function updateCommentComponent(el, patch) {
+  let structuralChanged = false;
+
   if (patch.addLine) {
+    structuralChanged = true;
     const lines = getCommentLinesCount(el) + 1;
     el.setAttribute('data-lines', String(lines));
 
@@ -393,6 +396,7 @@ function updateCommentComponent(el, patch) {
   }
 
   if (patch.removeLine) {
+    structuralChanged = true;
     const current = getCommentLinesCount(el);
     if (current <= 1) return; // keep at least one line
     const newCount = current - 1;
@@ -418,7 +422,7 @@ function updateCommentComponent(el, patch) {
 
   if (refreshNetTopology) refreshNetTopology();
 
-  if (appState && appState.selected === el) {
+  if (structuralChanged && appState && appState.selected === el) {
     window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: el } }));
   }
 }
