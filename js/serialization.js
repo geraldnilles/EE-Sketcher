@@ -320,6 +320,15 @@ export function importSchema(text) {
         cr.setAttribute('height', g.getAttribute('data-height'));
         cr.setAttribute('fill', g.getAttribute('data-fill'));
       }
+      // Restore label attributes from text elements
+      if (!g.getAttribute('data-label-top')) {
+        const tlt = g.querySelector('text.label-top');
+        if (tlt) g.setAttribute('data-label-top', tlt.textContent || '');
+      }
+      if (!g.getAttribute('data-label-bottom')) {
+        const blt = g.querySelector('text.label-bottom');
+        if (blt) g.setAttribute('data-label-bottom', blt.textContent || '');
+      }
       return;
     }
     if (g.classList.contains('vdd-component')) {

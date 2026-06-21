@@ -253,11 +253,39 @@ function renderVddPanel(body, g) {
 
 function renderContainerPanel(body, g) {
   clear(body);
+  const labels = readLabels(g);
   const width = getWidth(g);
   const height = getHeight(g);
   const currentFill = g.getAttribute('data-fill') || '#ffffff';
 
   body.appendChild(el('h3', { style: 'margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--fg-secondary);' }, ['Layer Container']));
+
+  // Top / Bottom labels
+  const topRow = el('div', { style: 'margin-bottom: 6px;' }, [
+    el('label', { style: 'font-size: 11px; color: #666; display: block; margin-bottom: 2px;' }, ['Top Label']),
+    el('input', {
+      type: 'text', value: labels.top || '',
+      placeholder: 'e.g. Analog Section',
+      style: 'width: 100%; box-sizing: border-box;',
+      oninput: (e) => {
+        updateComponent(g, { labelTop: e.target.value });
+      },
+    }),
+  ]);
+  body.appendChild(topRow);
+
+  const bottomRow = el('div', { style: 'margin-bottom: 8px;' }, [
+    el('label', { style: 'font-size: 11px; color: #666; display: block; margin-bottom: 2px;' }, ['Bottom Label']),
+    el('input', {
+      type: 'text', value: labels.bottom || '',
+      placeholder: 'e.g. Power Stage',
+      style: 'width: 100%; box-sizing: border-box;',
+      oninput: (e) => {
+        updateComponent(g, { labelBottom: e.target.value });
+      },
+    }),
+  ]);
+  body.appendChild(bottomRow);
 
   // Width controls
   const widthLabel = el('div', { style: 'margin-bottom: 4px;' }, [

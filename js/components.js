@@ -163,7 +163,31 @@ export function createContainerComponent(x, y) {
   rect.setAttribute('y', '0');
   rect.setAttribute('width', '200');
   rect.setAttribute('height', '150');
+  rect.setAttribute('fill', '#ffffff');
   g.appendChild(rect);
+
+  // Top label (centered above the rect)
+  const topLabel = document.createElementNS(SVG_NS, 'text');
+  topLabel.setAttribute('class', 'label-top');
+  topLabel.setAttribute('x', '100');
+  topLabel.setAttribute('y', '-10');
+  topLabel.setAttribute('text-anchor', 'middle');
+  topLabel.setAttribute('dominant-baseline', 'middle');
+  topLabel.textContent = '';
+  g.appendChild(topLabel);
+
+  // Bottom label (centered below the rect)
+  const bottomLabel = document.createElementNS(SVG_NS, 'text');
+  bottomLabel.setAttribute('class', 'label-bottom');
+  bottomLabel.setAttribute('x', '100');
+  bottomLabel.setAttribute('y', '160');
+  bottomLabel.setAttribute('text-anchor', 'middle');
+  bottomLabel.setAttribute('dominant-baseline', 'middle');
+  bottomLabel.textContent = '';
+  g.appendChild(bottomLabel);
+
+  g.setAttribute('data-label-top', '');
+  g.setAttribute('data-label-bottom', '');
 
   const layer = document.getElementById('containers-layer');
   if (layer) layer.appendChild(g);
@@ -414,6 +438,7 @@ export function updateComponent(el, patch) {
  */
 function updateContainerComponent(el, patch) {
   let structuralChanged = false;
+  let needsSidebarRefresh = false;
 
   const minWidth = 50, minHeight = 50;
   let width = parseInt(el.getAttribute('data-width') || '200', 10);
@@ -444,15 +469,35 @@ function updateContainerComponent(el, patch) {
       rect.setAttribute('width', String(width));
       rect.setAttribute('height', String(height));
     }
+    // Reposition labels when size changes
+    const topLabel = el.querySelector('text.label-top');
+    if (topLabel) topLabel.setAttribute('x', String(width / 2));
+    const bottomLabel = el.querySelector('text.label-bottom');
+    if (bottomLabel) bottomLabel.setAttribute('y', String(height + 10));
+  }
+
+  // Label patches
+  if (typeof patch.labelTop === 'string') {
+    const topLabel = el.querySelector('text.label-top');
+    if (topLabel) topLabel.textContent = patch.labelTop;
+    el.setAttribute('data-label-top', patch.labelTop);
+    needsSidebarRefresh = true;
+  }
+  if (typeof patch.labelBottom === 'string') {
+    const bottomLabel = el.querySelector('text.label-bottom');
+    if (bottomLabel) bottomLabel.textContent = patch.labelBottom;
+    el.setAttribute('data-label-bottom', patch.labelBottom);
+    needsSidebarRefresh = true;
   }
 
   if (typeof patch.fillColor === 'string') {
     el.setAttribute('data-fill', patch.fillColor);
     const rect = el.querySelector('rect.container-body');
     if (rect) rect.setAttribute('fill', patch.fillColor);
+    needsSidebarRefresh = true;
   }
 
-  if (structuralChanged && appState && appState.selected === el) {
+  if ((structuralChanged || needsSidebarRefresh) && appState && appState.selected === el) {
     window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: el } }));
   }
 }

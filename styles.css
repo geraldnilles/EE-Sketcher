@@ -435,7 +435,6 @@ button-row {
 
 /* ===== Container component styling ===== */
 .container-body {
-  fill: #ffffff;
   stroke: var(--comp-stroke, #6b7280);
   stroke-width: var(--comp-stroke-width, 2);
   stroke-dasharray: 6 4;
