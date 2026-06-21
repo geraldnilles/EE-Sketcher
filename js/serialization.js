@@ -68,7 +68,7 @@ function snapImportedCoords(root) {
       if (rect) {
         rect.setAttribute('width', String(Math.max(50, Math.round(w / 50) * 50)));
         rect.setAttribute('height', String(Math.max(50, Math.round(h / 50) * 50)));
-        rect.setAttribute('fill', fill);
+        rect.style.fill = fill;
       }
       return;
     }
@@ -318,7 +318,7 @@ export function importSchema(text) {
       if (cr) {
         cr.setAttribute('width', g.getAttribute('data-width'));
         cr.setAttribute('height', g.getAttribute('data-height'));
-        cr.setAttribute('fill', g.getAttribute('data-fill'));
+        cr.style.fill = g.getAttribute('data-fill');
       }
       // Restore label attributes from text elements
       if (!g.getAttribute('data-label-top')) {

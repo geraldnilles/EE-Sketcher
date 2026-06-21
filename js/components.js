@@ -163,7 +163,7 @@ export function createContainerComponent(x, y) {
   rect.setAttribute('y', '0');
   rect.setAttribute('width', '200');
   rect.setAttribute('height', '150');
-  rect.setAttribute('fill', '#ffffff');
+  rect.style.fill = '#ffffff';
   g.appendChild(rect);
 
   // Top label (centered above the rect)
@@ -493,7 +493,7 @@ function updateContainerComponent(el, patch) {
   if (typeof patch.fillColor === 'string') {
     el.setAttribute('data-fill', patch.fillColor);
     const rect = el.querySelector('rect.container-body');
-    if (rect) rect.setAttribute('fill', patch.fillColor);
+    if (rect) rect.style.fill = patch.fillColor;
     needsSidebarRefresh = true;
   }
 
