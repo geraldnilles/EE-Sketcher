@@ -5,6 +5,7 @@ Test: Data Portal — Export and Import functionality.
 Features tested:
   - Clicking "Export Schema" populates the textarea with SVG data.
   - Exported text is non-empty and contains expected SVG structure.
+  - Comment components survive export/import round-trip.
   - Clicking "Import Schema" with valid SVG text restores elements.
   - Status messages appear after export/import (success/error).
 """
@@ -30,11 +31,18 @@ def run():
         page.wait_for_timeout(100)
         page.click("#add-gnd-btn")
         page.wait_for_timeout(100)
+        # Add a comment component with some text
+        page.click("#add-comment-btn")
+        page.wait_for_timeout(100)
+        # Type text into the comment so it survives auto-delete
+        comment_input = page.locator("#inspector-body input[type='text']").first
+        comment_input.fill("Test Comment")
+        page.wait_for_timeout(100)
 
         components_layer = page.locator("#components-layer")
         initial_component_count = components_layer.locator(".generic-component").count()
-        assert initial_component_count >= 3, (
-            f"Expected at least 3 components, got {initial_component_count}"
+        assert initial_component_count >= 4, (
+            f"Expected at least 4 components, got {initial_component_count}"
         )
 
         # ------------------------------------------------------------------
@@ -55,6 +63,12 @@ def run():
         )
         assert "generic-component" in exported_text or "component" in exported_text.lower(), (
             "Exported text should contain component data"
+        )
+        assert "comment-component" in exported_text, (
+            "Exported text should contain comment-component data"
+        )
+        assert "Test Comment" in exported_text, (
+            "Exported text should contain the comment text 'Test Comment'"
         )
 
         # Status message should appear
@@ -87,6 +101,17 @@ def run():
         assert imported_count >= initial_component_count, (
             f"Import should restore at least {initial_component_count} components, "
             f"got {imported_count}"
+        )
+
+        # Verify comment component was restored with its text
+        imported_comments = components_layer.locator(".comment-component")
+        assert imported_comments.count() >= 1, (
+            f"Import should restore the comment component, got {imported_comments.count()}"
+        )
+        # Check that the comment text survived
+        restored_comment_text = imported_comments.first.locator("text.comment-line").first.text_content().strip()
+        assert restored_comment_text == "Test Comment", (
+            f"Comment text should be 'Test Comment' after import, got '{restored_comment_text}'"
         )
 
         # Status message for import

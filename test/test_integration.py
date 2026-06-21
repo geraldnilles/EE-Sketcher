@@ -3,14 +3,14 @@
 Test: End-to-end integration — full user workflow.
 
 Workflow:
-  1. Add a generic component, a resistor, and a VDD.
-  2. Label the resistor "R1".
-  3. Connect VDD to the generic component's top-right pin with a net.
-  4. Connect GND to the generic component's bottom-right pin with a net.
+  1. Add a generic component, a resistor, a GND, and a comment.
+  2. Label the generic "U1" and resistor "R1".
+  3. Add text to the comment.
+  4. Draw net lines.
   5. Drag the generic component to a new position.
   6. Export the schema.
   7. Reset the page, import the schema.
-  8. Verify all elements are restored.
+  8. Verify all elements (including comment) are restored.
 """
 
 from playwright.sync_api import sync_playwright
@@ -50,6 +50,13 @@ def run():
         page.wait_for_timeout(100)
 
         page.click("#add-gnd-btn")
+        page.wait_for_timeout(100)
+
+        # Add a comment component with text
+        page.click("#add-comment-btn")
+        page.wait_for_timeout(100)
+        comment_input = page.locator("#inspector-body input[type='text']").first
+        comment_input.fill("Design Note: VDD = 3.3V")
         page.wait_for_timeout(100)
 
         # ------------------------------------------------------------------
@@ -112,6 +119,8 @@ def run():
         exported = textarea.input_value()
         assert len(exported) > 100, "Exported schema too short"
         assert "U1" in exported, "Exported schema should contain component label 'U1'"
+        assert "Design Note" in exported, "Exported schema should contain comment text"
+        assert "comment-component" in exported, "Exported schema should contain comment component"
 
         # ------------------------------------------------------------------
         # 5. Reset and import
@@ -149,6 +158,16 @@ def run():
         # Verify the label survived the round-trip
         page_text = page.evaluate("() => document.querySelector('#components-layer')?.innerHTML || ''")
         assert "U1" in page_text, "Component label 'U1' should survive export/import round-trip"
+
+        # Verify comment component survived round-trip
+        imported_comments = page.locator("#components-layer .comment-component")
+        assert imported_comments.count() >= 1, (
+            f"Comment should survive export/import, got {imported_comments.count()}"
+        )
+        comment_text = imported_comments.first.locator("text.comment-line").first.text_content()
+        assert "Design Note" in comment_text, (
+            f"Comment text should survive round-trip, got '{comment_text}'"
+        )
 
         # ------------------------------------------------------------------
         # 7. Selection and deletion still work after import

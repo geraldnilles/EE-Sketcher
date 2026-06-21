@@ -148,6 +148,47 @@ def run():
             f"Line should be removed. Before: {line_count_before}, After: {line_count_after}"
         )
 
+        # ------------------------------------------------------------------
+        # 6. Delete a comment component via X key
+        # ------------------------------------------------------------------
+        page.click("#add-comment-btn")
+        page.wait_for_timeout(100)
+        comp_count_before = components_layer.locator(".comment-component").count()
+
+        page.keyboard.press("x")
+        page.wait_for_timeout(100)
+
+        comp_count_after = components_layer.locator(".comment-component").count()
+        assert comp_count_after == comp_count_before - 1, (
+            f"Comment should be removed via X key. Before: {comp_count_before}, After: {comp_count_after}"
+        )
+        # Selection should be cleared
+        assert page.locator(".is-selected").count() == 0, (
+            "Selection should be cleared after deleting comment"
+        )
+
+        # ------------------------------------------------------------------
+        # 7. Delete a comment via sidebar Delete Comment button
+        # ------------------------------------------------------------------
+        page.click("#add-comment-btn")
+        page.wait_for_timeout(100)
+        comp_count_before = components_layer.locator(".comment-component").count()
+
+        delete_btn = page.locator("#inspector-body button:has-text('Delete Comment')")
+        assert delete_btn.count() >= 1, "Delete Comment button not found"
+        delete_btn.first.click()
+        page.wait_for_timeout(100)
+
+        comp_count_after = components_layer.locator(".comment-component").count()
+        assert comp_count_after == comp_count_before - 1, (
+            f"Comment should be removed via Delete Comment button. Before: {comp_count_before}, After: {comp_count_after}"
+        )
+        # Inspector should show "Nothing selected"
+        inspector_text = page.locator("#inspector-body").inner_text()
+        assert "Nothing selected" in inspector_text, (
+            "Inspector should show 'Nothing selected' after deleting comment"
+        )
+
         print("  ✓ All deletion assertions passed")
 
 

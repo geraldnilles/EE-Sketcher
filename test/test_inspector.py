@@ -7,6 +7,11 @@ Features tested:
     top label, bottom label, secondary checkbox, and delete button.
   - Editing pin labels, width, rows updates the component in the canvas.
   - Secondary checkbox toggles the data-secondary attribute on the component.
+  - Selecting a comment component shows: "Text Comment" header, text inputs
+    for each line, +/- line buttons, position info, and delete button.
+  - Editing comment line text updates the component's SVG text element.
+  - Adding/removing lines changes the data-lines attribute and text nodes.
+  - Blur with all blank lines auto-deletes the comment component.
   - Selecting a passive component shows: label input, rotation select.
   - Selecting a VDD shows: label input.
   - Selecting a GND shows: read-only position info.
@@ -28,6 +33,7 @@ def run():
         page.wait_for_load_state("networkidle")
 
         inspector = page.locator("#inspector-body")
+        components_layer = page.locator("#components-layer")
 
         # ------------------------------------------------------------------
         # 1. Generic component inspector
@@ -131,6 +137,102 @@ def run():
         secondary_val = comp.get_attribute('data-secondary')
         assert secondary_val is None or secondary_val == "false", (
             f"data-secondary should be removed after unchecking, got: {secondary_val}"
+        )
+
+        # ------------------------------------------------------------------
+        # 3a. Comment component inspector
+        # ------------------------------------------------------------------
+        # Clear current selection first
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(50)
+
+        page.click("#add-comment-btn")
+        page.wait_for_timeout(100)
+
+        comment = page.locator(".comment-component.is-selected").first
+        assert comment.count() >= 1, "Comment component should be selected after creation"
+
+        inspector_text = inspector.inner_text()
+        assert "Text Comment" in inspector_text or "Comment" in inspector_text, (
+            f"Inspector should show Text Comment panel, got: {inspector_text}"
+        )
+
+        # Should have at least one text input for the comment line
+        comment_inputs = inspector.locator("input[type='text']")
+        assert comment_inputs.count() >= 1, (
+            f"Expected at least 1 text input for comment, got {comment_inputs.count()}"
+        )
+
+        # Type something in the first line and verify the SVG text updates
+        comment_inputs.first.fill("Hello World")
+        page.wait_for_timeout(100)
+        # Verify the SVG text node was updated
+        svg_line = comment.locator("text.comment-line[data-line-idx='0']")
+        comment_text = svg_line.text_content()
+        assert "Hello" in comment_text, (
+            f"Comment SVG text should contain 'Hello', got '{comment_text}'"
+        )
+
+        # Test + Line button adds a new line
+        plus_btn = inspector.locator("button:has-text('+ Line')")
+        assert plus_btn.count() >= 1, "+ Line button not found in comment inspector"
+        plus_btn.first.click()
+        page.wait_for_timeout(100)
+
+        # data-lines should now be 2
+        new_lines_attr = comment.get_attribute("data-lines")
+        assert new_lines_attr == "2", (
+            f"data-lines should be 2 after adding a line, got {new_lines_attr}"
+        )
+        # A second text.comment-line should exist
+        second_line = comment.locator("text.comment-line[data-line-idx='1']")
+        assert second_line.count() >= 1, "Second text line (idx=1) was not created"
+
+        # Verify the inspector now shows 2 text inputs
+        comment_inputs_after = inspector.locator("input[type='text']")
+        assert comment_inputs_after.count() >= 2, (
+            f"Expected at least 2 text inputs after adding line, got {comment_inputs_after.count()}"
+        )
+
+        # Test - Line button removes a line
+        minus_btn = inspector.locator("button:has-text('- Line')")
+        assert minus_btn.count() >= 1, "- Line button not found in comment inspector"
+        minus_btn.first.click()
+        page.wait_for_timeout(100)
+
+        new_lines_attr2 = comment.get_attribute("data-lines")
+        assert new_lines_attr2 == "1", (
+            f"data-lines should be 1 after removing a line, got {new_lines_attr2}"
+        )
+
+        # Position info should be shown
+        assert "Position" in inspector_text or "position" in inspector.inner_text().lower(), (
+            "Comment inspector should show Position info"
+        )
+
+        # Delete button should exist
+        delete_comment_btn = inspector.locator("button:has-text('Delete Comment')")
+        assert delete_comment_btn.count() >= 1, (
+            "Delete Comment button not found in comment inspector"
+        )
+
+        # Auto-delete on blur when all lines are blank
+        # Clear the input, then click elsewhere to trigger blur
+        comment_inputs_after.first.fill("")
+        page.wait_for_timeout(50)
+        # Click on the canvas to blur the input
+        page.locator("#canvas").click(position={"x": 100, "y": 100})
+        page.wait_for_timeout(150)
+
+        # The comment should now be deleted
+        remaining_comments = components_layer.locator(".comment-component")
+        assert remaining_comments.count() == 0, (
+            f"Comment should be auto-deleted when all lines are blank, got {remaining_comments.count()}"
+        )
+        # Inspector should show "Nothing selected"
+        inspector_text = inspector.inner_text()
+        assert "Nothing selected" in inspector_text, (
+            "Inspector should show 'Nothing selected' after auto-delete"
         )
 
         # ------------------------------------------------------------------

@@ -7,6 +7,7 @@ Features tested:
   - + GND button creates a ground symbol
   - + VDD button creates a power bus with label
   - + Resistor / + Capacitor / + Inductor / + Diode create passive components
+  - + Comment button creates a text comment component
   - Component appears in the components-layer
   - Component gets auto-selected (.is-selected)
   - Component has data-id attribute
@@ -116,7 +117,23 @@ def run():
         assert diode.count() >= 1, "Diode was not added"
 
         # ------------------------------------------------------------------
-        # 9. All passives have a use element referencing the correct SVG def
+        # 10. Comment component via toolbar button
+        # ------------------------------------------------------------------
+        page.click("#add-comment-btn")
+        assert_one_selected_component(page)
+        comment = components_layer.locator(".comment-component")
+        assert comment.count() >= 1, "Comment component was not added"
+        assert comment.last.get_attribute("data-id"), "Comment missing data-id"
+        assert comment.last.get_attribute("data-lines") == "1", "Comment should have data-lines=1"
+
+        # Verify the comment has a background rect and an initial text line
+        rect = comment.last.locator("rect.comment-body")
+        assert rect.count() >= 1, "Comment missing rect.comment-body"
+        line = comment.last.locator("text.comment-line[data-line-idx='0']")
+        assert line.count() >= 1, "Comment missing initial text line (data-line-idx=0)"
+
+        # ------------------------------------------------------------------
+        # 11. All passives have a use element referencing the correct SVG def
         # ------------------------------------------------------------------
         for ptype in ("resistor", "capacitor", "inductor", "diode"):
             comp = components_layer.locator(f".passive-component[data-type='{ptype}']").last
