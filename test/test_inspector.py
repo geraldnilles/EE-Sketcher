@@ -4,8 +4,9 @@ Test: Inspector sidebar — different panels per element type and editable field
 
 Features tested:
   - Selecting a generic component shows: pin labels, width input, rows input,
-    top label, bottom label, and delete button.
+    top label, bottom label, secondary checkbox, and delete button.
   - Editing pin labels, width, rows updates the component in the canvas.
+  - Secondary checkbox toggles the data-secondary attribute on the component.
   - Selecting a passive component shows: label input, rotation select.
   - Selecting a VDD shows: label input.
   - Selecting a GND shows: read-only position info.
@@ -99,6 +100,38 @@ def run():
             assert new_width == "150", (
                 f"Component width should be 150 after edit, got {new_width}"
             )
+
+        # ------------------------------------------------------------------
+        # 2b. Secondary checkbox (grey fill)
+        # ------------------------------------------------------------------
+        # The "Secondary (grey fill)" checkbox should be present in the
+        # generic component inspector panel.
+        # Find the label containing the checkbox using CSS :has() selector
+        secondary_label = inspector.locator("label:has(input[type='checkbox'])")
+        secondary_checkbox_count = secondary_label.count()
+        assert secondary_checkbox_count >= 1, (
+            f"Secondary checkbox label not found in inspector. Found {secondary_checkbox_count} matching labels"
+        )
+        secondary_text = secondary_label.first.inner_text()
+        assert "Secondary" in secondary_text or "grey fill" in secondary_text, (
+            f"Incorrect secondary label text: {secondary_text}"
+        )
+
+        # Check the checkbox and verify data-secondary is set on the component
+        secondary_checkbox = inspector.locator("input[type='checkbox']").first
+        secondary_checkbox.check()
+        page.wait_for_timeout(100)
+        assert comp.get_attribute('data-secondary') == 'true', (
+            "Component should have data-secondary='true' after checking the box"
+        )
+
+        # Uncheck and verify data-secondary is removed
+        secondary_checkbox.uncheck()
+        page.wait_for_timeout(100)
+        secondary_val = comp.get_attribute('data-secondary')
+        assert secondary_val is None or secondary_val == "false", (
+            f"data-secondary should be removed after unchecking, got: {secondary_val}"
+        )
 
         # ------------------------------------------------------------------
         # 3. Passive component inspector

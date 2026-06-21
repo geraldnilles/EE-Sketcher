@@ -6,7 +6,7 @@ Features tested:
   - + Component button (and key A) creates a generic block with left/right pins
   - + GND button creates a ground symbol
   - + VDD button creates a power bus with label
-  - + Resistor / + Capacitor / + Inductor create passive components
+  - + Resistor / + Capacitor / + Inductor / + Diode create passive components
   - Component appears in the components-layer
   - Component gets auto-selected (.is-selected)
   - Component has data-id attribute
@@ -108,9 +108,17 @@ def run():
         assert inductor.count() >= 1, "Inductor was not added"
 
         # ------------------------------------------------------------------
-        # 8. All passives have a use element referencing the correct SVG def
+        # 8. Diode button
         # ------------------------------------------------------------------
-        for ptype in ("resistor", "capacitor", "inductor"):
+        page.click("#add-diode-btn")
+        assert_one_selected_component(page)
+        diode = components_layer.locator(".passive-component[data-type='diode']")
+        assert diode.count() >= 1, "Diode was not added"
+
+        # ------------------------------------------------------------------
+        # 9. All passives have a use element referencing the correct SVG def
+        # ------------------------------------------------------------------
+        for ptype in ("resistor", "capacitor", "inductor", "diode"):
             comp = components_layer.locator(f".passive-component[data-type='{ptype}']").last
             use_el = comp.locator("use")
             assert use_el.count() >= 1, f"{ptype} missing <use> element"
