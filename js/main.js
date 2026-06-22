@@ -182,13 +182,17 @@ function init() {
   }
 
   if (exportBtn) {
-    exportBtn.addEventListener('click', () => {
+    exportBtn.addEventListener('click', async () => {
       try {
         const cropToggle = document.getElementById('export-crop-chk');
         const shouldCrop = cropToggle ? cropToggle.checked : false;
         const text = exportSchema(shouldCrop);
         if (portal) portal.value = text;
-        setMsg('Exported ' + text.length + ' bytes of SVG.', 'success');
+
+        // Copy the generated SVG text directly to the clipboard
+        await navigator.clipboard.writeText(text);
+
+        setMsg('Exported and copied to clipboard (' + text.length + ' bytes of SVG).', 'success');
       } catch (err) {
         console.error(err);
         setMsg('Export failed: ' + err.message, 'error');
