@@ -8,6 +8,7 @@ Features tested:
   - Comment components survive export/import round-trip.
   - Clicking "Import Schema" with valid SVG text restores elements.
   - Status messages appear after export/import (success/error).
+  - Cropped export checkbox changes viewBox to fit elements.
 """
 
 from playwright.sync_api import sync_playwright
@@ -131,6 +132,56 @@ def run():
         assert "fail" in msg_text.lower() or "error" in msg_text.lower(), (
             f"Expected error message for invalid import, got: '{msg_text}'"
         )
+
+        # ------------------------------------------------------------------
+        # 4. Cropped export checkbox
+        # ------------------------------------------------------------------
+        # Reload clean, add a single component, export with crop enabled
+        page.goto(APP_URL)
+        page.wait_for_load_state("networkidle")
+
+        page.click("#add-component-btn")
+        page.wait_for_timeout(100)
+        # Label it so we can identify it
+        top_input = page.locator("#inspector-body input[type='text']").first
+        top_input.fill("CROP_TEST")
+        page.wait_for_timeout(100)
+
+        # Export with crop checked (default)
+        page.click("#export-btn")
+        page.wait_for_timeout(100)
+
+        cropped_text = page.locator("#data-portal").input_value()
+        assert "viewBox" in cropped_text, "Exported SVG should have a viewBox"
+        # Should NOT be "0 0 1500 1000" when crop is checked and there are elements
+        assert 'viewBox="0 0 1500 1000"' not in cropped_text, (
+            "Cropped export should not have default viewBox 0 0 1500 1000"
+        )
+        # Should contain the label
+        assert "CROP_TEST" in cropped_text, "Cropped export should contain the component label"
+
+        # Now uncheck crop and export
+        page.locator("#export-crop-chk").uncheck()
+        page.wait_for_timeout(50)
+        page.click("#export-btn")
+        page.wait_for_timeout(100)
+
+        uncropped_text = page.locator("#data-portal").input_value()
+        assert 'viewBox="0 0 1500 1000"' in uncropped_text, (
+            "Uncropped export should have viewBox 0 0 1500 1000"
+        )
+
+        # With crop checked but no elements, should fallback to full viewBox
+        page.goto(APP_URL)
+        page.wait_for_load_state("networkidle")
+        page.click("#export-btn")  # crop is checked by default
+        page.wait_for_timeout(100)
+
+        empty_cropped = page.locator("#data-portal").input_value()
+        assert 'viewBox="0 0 1500 1000"' in empty_cropped, (
+            "Cropped export with no elements should fallback to default viewBox"
+        )
+
 
         print("  ✓ All data portal assertions passed")
 

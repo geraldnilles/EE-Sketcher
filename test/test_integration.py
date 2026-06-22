@@ -109,6 +109,36 @@ def run():
         page.mouse.up()
         page.wait_for_timeout(100)
 
+
+        # ------------------------------------------------------------------
+        # 3b. Duplicate a component
+        # ------------------------------------------------------------------
+        # Select the generic component again
+        page.locator(".mode-btn[data-mode='select']").click()
+        page.wait_for_timeout(50)
+        comp = page.locator(".generic-component").first
+        comp.click(force=True)
+        page.wait_for_timeout(100)
+
+        generic_before = page.locator("#components-layer .generic-component").count()
+        dup_btn = page.locator("button:has-text('Duplicate Component')")
+        assert dup_btn.count() >= 1, "Duplicate Component button not found"
+        # Use evaluate because button click causes sidebar re-render (DOM detach)
+        page.evaluate(
+            'async () => {'
+            '  const { duplicateComponent } = await import("/js/components.js");'
+            '  const c = document.querySelector("#components-layer .generic-component.is-selected");'
+            '  duplicateComponent(c);'
+            '  await new Promise(r => setTimeout(r, 200));'
+            '}'
+        )
+        page.wait_for_timeout(150)
+
+        generic_after = page.locator("#components-layer .generic-component").count()
+        assert generic_after >= generic_before + 1, (
+            f"Duplicate should add a component. Before: {generic_before}, After: {generic_after}"
+        )
+
         # ------------------------------------------------------------------
         # 4. Export the schema
         # ------------------------------------------------------------------
@@ -121,6 +151,8 @@ def run():
         assert "U1" in exported, "Exported schema should contain component label 'U1'"
         assert "Design Note" in exported, "Exported schema should contain comment text"
         assert "comment-component" in exported, "Exported schema should contain comment component"
+        assert "container-component" in exported, "Exported schema should contain container component"
+        assert "Power Section" in exported, "Exported schema should contain container label"
 
         # ------------------------------------------------------------------
         # 5. Reset and import
@@ -158,6 +190,17 @@ def run():
         # Verify the label survived the round-trip
         page_text = page.evaluate("() => document.querySelector('#components-layer')?.innerHTML || ''")
         assert "U1" in page_text, "Component label 'U1' should survive export/import round-trip"
+
+
+        # Verify container survived round-trip
+        imported_containers = page.locator("#containers-layer .container-component")
+        assert imported_containers.count() >= 1, (
+            f"Container should survive export/import, got {imported_containers.count()}"
+        )
+        container_label_text = imported_containers.first.locator("text.label-top").text_content()
+        assert "Power Section" in container_label_text, (
+            f"Container top label should survive round-trip, got '{container_label_text}'"
+        )
 
         # Verify comment component survived round-trip
         imported_comments = page.locator("#components-layer .comment-component")

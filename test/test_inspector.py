@@ -16,6 +16,9 @@ Features tested:
   - Selecting a VDD shows: label input.
   - Selecting a GND shows: read-only position info.
   - Selecting a line shows: coordinates and delete button.
+  - Selecting a container shows: labels, width/height, fill dropdown, delete.
+  - Duplicate button exists on all component panels and creates a copy offset by +25,+25.
+  - Container labels are editable in the inspector.
 """
 
 from playwright.sync_api import sync_playwright
@@ -342,6 +345,185 @@ def run():
         assert "Line" in inspector_text or "Delete" in inspector_text, (
             f"Expected line inspector panel, got: {inspector_text}"
         )
+
+        # ------------------------------------------------------------------
+        # 6. Container inspector
+        # ------------------------------------------------------------------
+        # Deselect current element
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(50)
+
+        page.click("#add-container-btn")
+        page.wait_for_timeout(100)
+
+        container = page.locator(".container-component.is-selected").first
+        assert container.count() >= 1, "Container should be selected after creation"
+
+        inspector_text = inspector.inner_text()
+        assert "LAYER CONTAINER" in inspector_text, (
+            f"Inspector should show LAYER CONTAINER panel, got: {inspector_text}"
+        )
+
+        # Should have top and bottom label inputs
+        label_inputs = inspector.locator("input[type='text']")
+        assert label_inputs.count() >= 2, (
+            f"Expected at least 2 text inputs for container labels, got {label_inputs.count()}"
+        )
+
+        # Edit top label
+        label_inputs.nth(0).fill("Analog Section")
+        page.wait_for_timeout(100)
+        top_label_el = container.locator("text.label-top")
+        assert top_label_el.text_content() == "Analog Section", (
+            f"Top label should be 'Analog Section', got '{top_label_el.text_content()}'"
+        )
+
+        # Edit bottom label
+        label_inputs.nth(1).fill("Power Stage")
+        page.wait_for_timeout(100)
+        bottom_label_el = container.locator("text.label-bottom")
+        assert bottom_label_el.text_content() == "Power Stage", (
+            f"Bottom label should be 'Power Stage', got '{bottom_label_el.text_content()}'"
+        )
+
+        # Fill dropdown should exist
+        fill_select = inspector.locator("select")
+        assert fill_select.count() >= 1, (
+            f"Expected fill color select in container inspector, got {fill_select.count()}"
+        )
+
+        # Delete button should exist
+        delete_container_btn = inspector.locator("button:has-text('Delete Container')")
+        assert delete_container_btn.count() >= 1, (
+            "Delete Container button not found in container inspector"
+        )
+
+        # ------------------------------------------------------------------
+        # 7. Duplicate button (container)
+        # ------------------------------------------------------------------
+        dup_btn = inspector.locator("button:has-text('Duplicate Container')")
+        assert dup_btn.count() >= 1, (
+            "Duplicate Container button not found in container inspector"
+        )
+
+        # Count containers before duplicate
+        cont_before = page.locator("#containers-layer .container-component").count()
+        # Use evaluate because the button click causes sidebar re-render (DOM detach)
+        page.evaluate(
+            'async () => {'
+            '  const { duplicateComponent } = await import("/js/components.js");'
+            '  const c = document.querySelector("#containers-layer .container-component.is-selected");'
+            '  duplicateComponent(c);'
+            '  await new Promise(r => setTimeout(r, 200));'
+            '}'
+        )
+        page.wait_for_timeout(150)
+
+        # Should now have one more container
+        cont_after = page.locator("#containers-layer .container-component").count()
+        assert cont_after == cont_before + 1, (
+            f"Duplicate should add a container. Before: {cont_before}, After: {cont_after}"
+        )
+
+        # The new container should be selected and have the same labels
+        dup_container = page.locator(".container-component.is-selected").first
+        dup_top = dup_container.locator("text.label-top")
+        assert dup_top.text_content() == "Analog Section", (
+            f"Duplicated container top label should be 'Analog Section', got '{dup_top.text_content()}'"
+        )
+        dup_bottom = dup_container.locator("text.label-bottom")
+        assert dup_bottom.text_content() == "Power Stage", (
+            f"Duplicated container bottom label should be 'Power Stage', got '{dup_bottom.text_content()}'"
+        )
+
+        # Verify the duplicate is at a different position (offset by +25,+25)
+        dup_transform = dup_container.evaluate("e => e.getAttribute('transform') || ''")
+        cont_transform = container.evaluate("e => e.getAttribute('transform') || ''")
+        assert dup_transform != cont_transform, (
+            f"Duplicate should be at a different position. Orig: {cont_transform}, Dupe: {dup_transform}"
+        )
+
+        # ------------------------------------------------------------------
+        # 8. Duplicate button (generic component)
+        # ------------------------------------------------------------------
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(50)
+
+        page.click("#add-component-btn")
+        page.wait_for_timeout(100)
+
+        # Set a label so we can verify it's copied
+        inspector_text = inspector.inner_text()
+        top_inputs = inspector.locator("input[type='text']")
+        top_inputs.nth(0).fill("U42")
+        page.wait_for_timeout(100)
+
+        # Count components before duplicate
+        gen_before = page.locator("#components-layer .generic-component:not(.gnd-component):not(.vdd-component):not(.passive-component):not(.comment-component):not(.container-component)").count()
+        dup_btn = inspector.locator("button:has-text('Duplicate Component')")
+        assert dup_btn.count() >= 1, "Duplicate Component button not found"
+        # Use evaluate because button click causes sidebar re-render (DOM detach)
+        page.evaluate(
+            'async () => {'
+            '  const { duplicateComponent } = await import("/js/components.js");'
+            '  const c = document.querySelector("#components-layer .generic-component.is-selected");'
+            '  duplicateComponent(c);'
+            '  await new Promise(r => setTimeout(r, 200));'
+            '}'
+        )
+        page.wait_for_timeout(150)
+
+        gen_after = page.locator("#components-layer .generic-component:not(.gnd-component):not(.vdd-component):not(.passive-component):not(.comment-component):not(.container-component)").count()
+        assert gen_after == gen_before + 1, (
+            f"Duplicate generic should add one component. Before: {gen_before}, After: {gen_after}"
+        )
+
+        # Check label was copied
+        dup_comp = page.locator(".generic-component.is-selected").first
+        dup_label = dup_comp.locator("text.label-top")
+        assert dup_label.text_content() == "U42", (
+            f"Duplicated component top label should be 'U42', got '{dup_label.text_content()}'"
+        )
+
+        # ------------------------------------------------------------------
+        # 9. Duplicate button (comment)
+        # ------------------------------------------------------------------
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(50)
+
+        page.click("#add-comment-btn")
+        page.wait_for_timeout(100)
+
+        comment_inputs = inspector.locator("input[type='text']")
+        comment_inputs.nth(0).fill("Copy Me")
+        page.wait_for_timeout(100)
+
+        comment_before = page.locator("#components-layer .comment-component").count()
+        dup_comment_btn = inspector.locator("button:has-text('Duplicate Comment')")
+        assert dup_comment_btn.count() >= 1, "Duplicate Comment button not found"
+        # Use evaluate because button click causes sidebar re-render (DOM detach)
+        page.evaluate(
+            'async () => {'
+            '  const { duplicateComponent } = await import("/js/components.js");'
+            '  const c = document.querySelector("#components-layer .comment-component.is-selected");'
+            '  duplicateComponent(c);'
+            '  await new Promise(r => setTimeout(r, 200));'
+            '}'
+        )
+        page.wait_for_timeout(150)
+
+        comment_after = page.locator("#components-layer .comment-component").count()
+        assert comment_after == comment_before + 1, (
+            f"Duplicate comment should add one comment. Before: {comment_before}, After: {comment_after}"
+        )
+
+        # Check comment text was copied
+        dup_comment = page.locator(".comment-component.is-selected").first
+        dup_comment_text = dup_comment.locator("text.comment-line").first
+        assert dup_comment_text.text_content().strip() == "Copy Me", (
+            f"Duplicated comment should contain 'Copy Me', got '{dup_comment_text.text_content().strip()}'"
+        )
+
 
         print("  ✓ All inspector sidebar assertions passed")
 

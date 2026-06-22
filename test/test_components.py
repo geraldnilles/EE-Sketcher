@@ -8,6 +8,7 @@ Features tested:
   - + VDD button creates a power bus with label
   - + Resistor / + Capacitor / + Inductor / + Diode create passive components
   - + Comment button creates a text comment component
+  - + Container button creates a layer container with dashed border
   - Component appears in the components-layer
   - Component gets auto-selected (.is-selected)
   - Component has data-id attribute
@@ -131,6 +132,29 @@ def run():
         assert rect.count() >= 1, "Comment missing rect.comment-body"
         line = comment.last.locator("text.comment-line[data-line-idx='0']")
         assert line.count() >= 1, "Comment missing initial text line (data-line-idx=0)"
+
+
+        # ------------------------------------------------------------------
+        # 10b. Container component via toolbar button
+        # ------------------------------------------------------------------
+        containers_layer = page.locator("#containers-layer")
+        containers_before = containers_layer.locator(".container-component").count()
+        page.click("#add-container-btn")
+        assert_one_selected_component(page)
+        container = containers_layer.locator(".container-component")
+        assert container.count() == containers_before + 1, (
+            "Container component was not added"
+        )
+        assert container.last.get_attribute("data-id"), "Container missing data-id"
+        assert container.last.get_attribute("data-width"), "Container missing data-width"
+        assert container.last.get_attribute("data-height"), "Container missing data-height"
+        # Verify it has a rect.container-body
+        body_rect = container.last.locator("rect.container-body")
+        assert body_rect.count() >= 1, "Container missing rect.container-body"
+        # Verify it goes to containers-layer, not components-layer
+        assert containers_layer.locator(".container-component").count() == containers_before + 1, (
+            "Container should be in containers-layer"
+        )
 
         # ------------------------------------------------------------------
         # 11. All passives have a use element referencing the correct SVG def

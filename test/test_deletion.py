@@ -4,6 +4,7 @@ Test: Element deletion via sidebar button and keyboard shortcuts.
 
 Features tested:
   - Generic component deleted via sidebar "Delete Component" button.
+  - Container deleted via sidebar "Delete Container" button.
   - Component deleted via X key.
   - Component deleted via Backspace / Delete key.
   - Line deleted via X key.
@@ -188,6 +189,51 @@ def run():
         assert "Nothing selected" in inspector_text, (
             "Inspector should show 'Nothing selected' after deleting comment"
         )
+
+        # ------------------------------------------------------------------
+        # 6. Delete a container via X key
+        # ------------------------------------------------------------------
+        page.click("#add-container-btn")
+        page.wait_for_timeout(100)
+
+        containers_layer = page.locator("#containers-layer")
+        cont_before = containers_layer.locator(".container-component").count()
+        assert page.locator(".container-component.is-selected").count() >= 1, (
+            "Container should be selected"
+        )
+
+        page.keyboard.press("x")
+        page.wait_for_timeout(100)
+
+        cont_after = containers_layer.locator(".container-component").count()
+        assert cont_after == cont_before - 1, (
+            f"Container should be deleted via X key. Before: {cont_before}, After: {cont_after}"
+        )
+        assert page.locator(".is-selected").count() == 0, (
+            "Selection should be cleared after container deletion"
+        )
+
+        # ------------------------------------------------------------------
+        # 7. Delete a container via sidebar button
+        # ------------------------------------------------------------------
+        page.click("#add-container-btn")
+        page.wait_for_timeout(100)
+
+        cont_before = containers_layer.locator(".container-component").count()
+
+        delete_btn = page.locator("button:has-text('Delete Container')")
+        assert delete_btn.count() >= 1, "Delete Container button not found"
+        delete_btn.first.click()
+        page.wait_for_timeout(100)
+
+        cont_after = containers_layer.locator(".container-component").count()
+        assert cont_after == cont_before - 1, (
+            f"Container should be deleted via sidebar button. Before: {cont_before}, After: {cont_after}"
+        )
+        assert page.locator(".is-selected").count() == 0, (
+            "Selection should be cleared after container deletion via sidebar"
+        )
+
 
         print("  ✓ All deletion assertions passed")
 
