@@ -472,7 +472,10 @@ function updateContainerComponent(el, patch) {
     const topLabel = el.querySelector('text.label-top');
     if (topLabel) topLabel.setAttribute('x', String(width / 2));
     const bottomLabel = el.querySelector('text.label-bottom');
-    if (bottomLabel) bottomLabel.setAttribute('y', String(height + 10));
+    if (bottomLabel) {
+      bottomLabel.setAttribute('x', String(width / 2));
+      bottomLabel.setAttribute('y', String(height + 10));
+    }
   }
 
   // Label patches
@@ -778,6 +781,14 @@ export function duplicateComponent(el) {
       rect.setAttribute('width', String(width));
       rect.setAttribute('height', String(height));
       rect.style.fill = fill;
+    }
+    // Reposition labels to match the duplicated container dimensions
+    const dupTopLabel = newEl.querySelector('text.label-top');
+    if (dupTopLabel) dupTopLabel.setAttribute('x', String(width / 2));
+    const dupBottomLabel = newEl.querySelector('text.label-bottom');
+    if (dupBottomLabel) {
+      dupBottomLabel.setAttribute('x', String(width / 2));
+      dupBottomLabel.setAttribute('y', String(height + 10));
     }
     updateComponent(newEl, { labelTop: labels.top, labelBottom: labels.bottom });
 
