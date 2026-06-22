@@ -185,8 +185,5 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for t
 
 ## TODOs
 
-- Add Rectangular Containers
-    - Background layer, behind all the other components and nets
 - Duplicate Componet
-- Crop to component area
 

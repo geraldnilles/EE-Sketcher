@@ -147,6 +147,13 @@
           <h2>Data Portal</h2>
           <textarea id="data-portal" rows="10" spellcheck="false"
                     placeholder="Raw SVG schema appears here after export. Paste SVG and click Import to load."></textarea>
+
+          <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" id="export-crop-chk" checked />
+            <label for="export-crop-chk" style="font-size: 12px; color: var(--fg-secondary); cursor: pointer; user-select: none;">
+              Crop canvas to diagram elements (+25 padding)
+            </label>
+          </div>
           <div class="data-portal-actions">
             <button type="button" id="export-btn">Export Schema</button>
             <button type="button" id="import-btn">Import Schema</button>

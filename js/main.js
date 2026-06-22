@@ -184,7 +184,9 @@ function init() {
   if (exportBtn) {
     exportBtn.addEventListener('click', () => {
       try {
-        const text = exportSchema();
+        const cropToggle = document.getElementById('export-crop-chk');
+        const shouldCrop = cropToggle ? cropToggle.checked : false;
+        const text = exportSchema(shouldCrop);
         if (portal) portal.value = text;
         setMsg('Exported ' + text.length + ' bytes of SVG.', 'success');
       } catch (err) {

@@ -245,7 +245,53 @@ function formatSVG(xmlString) {
   return formatted.trim();
 }
 
-export function exportSchema() {
+/**
+ * Collects bounding coordinates from all interactive diagram layers,
+ * computes their geometric union, and injects a 25-unit padded boundary window.
+ * @returns {string} Value matching SVG viewBox formatting constraints ("x y w h")
+ */
+function calculateCroppedViewBox() {
+  let xMin = Infinity, yMin = Infinity;
+  let xMax = -Infinity, yMax = -Infinity;
+  let hasElements = false;
+
+  // Track layout layer groups that store persistent schematic vectors
+  const targetLayers = ['containers-layer', 'nets-layer', 'components-layer'];
+
+  for (const id of targetLayers) {
+    const layer = document.getElementById(id);
+    if (layer && layer.children.length > 0) {
+      const bbox = layer.getBBox();
+
+      // Filter layer passes out if they lack explicit visual footprints
+      if (bbox.width > 0 || bbox.height > 0) {
+        xMin = Math.min(xMin, bbox.x);
+        yMin = Math.min(yMin, bbox.y);
+        xMax = Math.max(xMax, bbox.x + bbox.width);
+        yMax = Math.max(yMax, bbox.y + bbox.height);
+        hasElements = true;
+      }
+    }
+  }
+
+  // Fallback to absolute canvas configuration dimensions if the workspace is blank
+  if (!hasElements) return '0 0 1500 1000';
+
+  const PADDING = 25; // 1 standard grid cell spacing limit
+
+  // Apply padding bounds and safely clamp extremities to workspace edges [0..1500, 0..1000]
+  const cropX = Math.max(0, xMin - PADDING);
+  const cropY = Math.max(0, yMin - PADDING);
+  const cropXMax = Math.min(1500, xMax + PADDING);
+  const cropYMax = Math.min(1000, yMax + PADDING);
+
+  const cropW = cropXMax - cropX;
+  const cropH = cropYMax - cropY;
+
+  return `${cropX} ${cropY} ${cropW} ${cropH}`;
+}
+
+export function exportSchema(shouldCrop = false) {
   const svg = document.getElementById('canvas');
   if (!svg) return '';
   const clone = svg.cloneNode(true);
@@ -254,7 +300,11 @@ export function exportSchema() {
   stripState(clone);
   const userViewBox = svg.getAttribute('viewBox');
   if (userViewBox) clone.setAttribute('data-view-box', userViewBox);
-  clone.setAttribute('viewBox', '0 0 1500 1000');
+  if (shouldCrop) {
+    clone.setAttribute('viewBox', calculateCroppedViewBox());
+  } else {
+    clone.setAttribute('viewBox', '0 0 1500 1000');
+  }
   clone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   const xml = new XMLSerializer().serializeToString(clone);
   const rawSvg = '<?xml version="1.0" encoding="UTF-8"?>\n' + xml;
