@@ -716,3 +716,93 @@ export function createPassiveComponent(type, x, y) {
 
   return appendComponentToLayer(g);
 }
+
+/**
+ * Duplicates a selected component or container element.
+ * Copies all custom settings/labels and offsets the position by +25 units in X and Y.
+ * Automatically selects the newly created duplicate element.
+ * @param {SVGElement} el - The original component SVG element to copy.
+ */
+export function duplicateComponent(el) {
+  if (!el || !el.classList.contains('generic-component')) return;
+
+  // 1. Read current layout coordinates and shift position by one grid cell (+25 units)
+  const o = readOrigin(el);
+  const newX = o.x + 25;
+  const newY = o.y + 25;
+  let newEl = null;
+
+  // 2. Branch duplication strategy based on component sub-class signatures
+  if (el.classList.contains('gnd-component')) {
+    // Ground Connection Symbol
+    newEl = createGndComponent(newX, newY);
+
+  } else if (el.classList.contains('vdd-component')) {
+    // Power Bus Reference
+    const label = el.getAttribute('data-label') || 'VDD';
+    newEl = createVddComponent(newX, newY);
+    updateComponent(newEl, { labelVdd: label });
+
+  } else if (el.classList.contains('passive-component')) {
+    // Passive Components (Resistors, Capacitors, Inductors, Diodes)
+    const type = el.getAttribute('data-type');
+    const label = el.getAttribute('data-label') || '';
+    const rotate = parseInt(el.getAttribute('data-rotate') || '0', 10);
+    newEl = createPassiveComponent(type, newX, newY);
+    updateComponent(newEl, { labelPassive: label, rotatePassive: rotate });
+
+  } else if (el.classList.contains('comment-component')) {
+    // Text Comment Blocks
+    const lines = readCommentLines(el);
+    newEl = createCommentComponent(newX, newY);
+    // Expand rows to accommodate line counts greater than the default baseline
+    for (let i = 1; i < lines.length; i++) {
+      updateComponent(newEl, { addLine: true });
+    }
+    updateComponent(newEl, { lines: lines });
+
+  } else if (el.classList.contains('container-component')) {
+    // Background Layer Grouping Container Boxes
+    const labels = readLabels(el);
+    const width = getWidth(el);
+    const height = getHeight(el);
+    const fill = el.getAttribute('data-fill') || '#ffffff';
+
+    newEl = createContainerComponent(newX, newY);
+    newEl.setAttribute('data-width', String(width));
+    newEl.setAttribute('data-height', String(height));
+    newEl.setAttribute('data-fill', fill);
+
+    const rect = newEl.querySelector('rect.container-body');
+    if (rect) {
+      rect.setAttribute('width', String(width));
+      rect.setAttribute('height', String(height));
+      rect.style.fill = fill;
+    }
+    updateComponent(newEl, { labelTop: labels.top, labelBottom: labels.bottom });
+
+  } else {
+    // Standard Generic Multi-Pin IC Block Components
+    const labels = readLabels(el);
+    const width = getWidth(el);
+    const rows = getRows(el);
+    const isSecondary = el.getAttribute('data-secondary') === 'true';
+
+    newEl = createComponent(newX, newY, width, rows);
+    if (isSecondary) newEl.setAttribute('data-secondary', 'true');
+    updateComponent(newEl, {
+      labelTop: labels.top,
+      labelBottom: labels.bottom,
+      labelL: labels.left,
+      labelR: labels.right
+    });
+  }
+
+  // 3. Update the global application focus context if creation succeeded
+  if (newEl) {
+    document.querySelectorAll('.is-selected').forEach((e) => e.classList.remove('is-selected'));
+    newEl.classList.add('is-selected');
+    appState.selected = newEl;
+    window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: newEl } }));
+  }
+}

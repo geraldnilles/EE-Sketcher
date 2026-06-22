@@ -5,7 +5,7 @@
    ===================================================================== */
 
 import { appState } from './state.js';
-import { readLabels, getRows, getWidth, getHeight, updateComponent, deleteComponent, readOrigin, readCommentLines, getCommentLinesCount } from './components.js';
+import { readLabels, getRows, getWidth, getHeight, updateComponent, deleteComponent, readOrigin, readCommentLines, getCommentLinesCount, duplicateComponent } from './components.js';
 import { deleteLine } from './nets.js';
 import { readLineCoords } from './nets/net-interaction.js';
 
@@ -147,6 +147,12 @@ function renderComponentPanel(body, g) {
     `Position: (${o.x}, ${o.y})   Width: ${width}   Rows: ${rows}`,
   ]));
 
+  // Duplicate
+  body.appendChild(el('button', {
+    style: 'width: 100%; margin-top: 8px; margin-bottom: 4px;',
+    onclick: () => duplicateComponent(g),
+  }, ['Duplicate Component']));
+
   // Delete
   body.appendChild(el('button', {
     class: 'danger',
@@ -164,6 +170,12 @@ function renderGndPanel(body, g) {
   body.appendChild(el('pre', { class: 'meta' }, [
     `Position: (${o.x}, ${o.y})\nType: Static Reference`,
   ]));
+
+  // Duplicate
+  body.appendChild(el('button', {
+    style: 'width: 100%; margin-top: 8px; margin-bottom: 4px;',
+    onclick: () => duplicateComponent(g),
+  }, ['Duplicate Component']));
 
   body.appendChild(el('button', {
     class: 'danger',
@@ -210,6 +222,12 @@ function renderPassivePanel(body, g) {
     `Position: (${o.x}, ${o.y})\nType: Passive Ref (${type})\nRotation: ${rot}°`
   ]));
 
+  // Duplicate
+  body.appendChild(el('button', {
+    style: 'width: 100%; margin-top: 8px; margin-bottom: 4px;',
+    onclick: () => duplicateComponent(g),
+  }, ['Duplicate Component']));
+
   body.appendChild(el('button', {
     class: 'danger',
     style: 'width: 100%; margin-top: 4px;',
@@ -241,6 +259,12 @@ function renderVddPanel(body, g) {
   body.appendChild(el('pre', { class: 'meta' }, [
     `Position: (${o.x}, ${o.y})\nType: Power Reference`,
   ]));
+
+  // Duplicate
+  body.appendChild(el('button', {
+    style: 'width: 100%; margin-top: 8px; margin-bottom: 4px;',
+    onclick: () => duplicateComponent(g),
+  }, ['Duplicate Component']));
 
   body.appendChild(el('button', {
     class: 'danger',
@@ -339,6 +363,12 @@ function renderContainerPanel(body, g) {
     `Position: (${o.x}, ${o.y})\nWidth: ${width}  Height: ${height}\nFill: ${currentFill}`
   ]));
 
+  // Duplicate
+  body.appendChild(el('button', {
+    style: 'width: 100%; margin-top: 8px; margin-bottom: 4px;',
+    onclick: () => duplicateComponent(g),
+  }, ['Duplicate Container']));
+
   body.appendChild(el('button', {
     class: 'danger',
     style: 'width: 100%; margin-top: 4px;',
@@ -409,6 +439,12 @@ function renderCommentPanel(body, g) {
   body.appendChild(el('pre', { class: 'meta' }, [
     `Position: (${o.x}, ${o.y})\nLines: ${lines.length}`,
   ]));
+
+  // Duplicate
+  body.appendChild(el('button', {
+    style: 'width: 100%; margin-top: 8px; margin-bottom: 4px;',
+    onclick: () => duplicateComponent(g),
+  }, ['Duplicate Comment']));
 
   body.appendChild(el('button', {
     class: 'danger',
