@@ -43,6 +43,7 @@
 .component-body {
   fill: #ffffff;
   stroke: var(--comp-stroke, #000000);
+  stroke-width: var(--comp-stroke-width, 2);
   rx: 6px;
   ry: 6px;
   stroke-linecap: round;
@@ -51,6 +52,26 @@
 [data-secondary="true"] .component-body {
   fill: #c8c8c8;
 }
+
+/* Text Comment Portability Rules */
+.comment-body {
+  fill: none;
+  stroke: none;
+}
+.comment-line {
+  font-family: sans-serif;
+  font-size: 13px;
+  fill: #333333;
+}
+
+/* Layer Container Portability Rules */
+.container-body {
+  stroke: var(--comp-stroke, #6b7280);
+  stroke-width: var(--comp-stroke-width, 1);
+  rx: 8px;
+  ry: 8px;
+}
+
 .net-line {
   stroke: #000000;
   stroke-width: 2;
