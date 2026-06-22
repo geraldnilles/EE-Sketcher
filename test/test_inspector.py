@@ -406,6 +406,9 @@ def run():
             "Duplicate Container button not found in container inspector"
         )
 
+        # Capture original container transform before duplication
+        cont_transform = container.evaluate("e => e.getAttribute('transform') || ''")
+
         # Count containers before duplicate
         cont_before = page.locator("#containers-layer .container-component").count()
         # Use evaluate because the button click causes sidebar re-render (DOM detach)
@@ -438,7 +441,6 @@ def run():
 
         # Verify the duplicate is at a different position (offset by +25,+25)
         dup_transform = dup_container.evaluate("e => e.getAttribute('transform') || ''")
-        cont_transform = container.evaluate("e => e.getAttribute('transform') || ''")
         assert dup_transform != cont_transform, (
             f"Duplicate should be at a different position. Orig: {cont_transform}, Dupe: {dup_transform}"
         )

@@ -59,6 +59,16 @@ def run():
         comment_input.fill("Design Note: VDD = 3.3V")
         page.wait_for_timeout(100)
 
+        # Add a container component
+        page.click("#add-container-btn")
+        page.wait_for_timeout(100)
+        # Label the container
+        container_inputs = page.locator("#inspector-body input[type='text']")
+        # first text input should be top label
+        container_inputs.nth(0).fill("Power Section")
+        container_inputs.nth(0).press("Enter")
+        page.wait_for_timeout(100)
+
         # ------------------------------------------------------------------
         # 2. Connect with nets
         # ------------------------------------------------------------------
