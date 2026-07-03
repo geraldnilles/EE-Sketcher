@@ -373,11 +373,11 @@ export function importSchema(text) {
       // Restore label attributes from text elements
       if (!g.getAttribute('data-label-top')) {
         const tlt = g.querySelector('text.label-top');
-        if (tlt) g.setAttribute('data-label-top', tlt.textContent || '');
+        if (tlt) g.setAttribute('data-label-top', (tlt.textContent || '').trim());
       }
       if (!g.getAttribute('data-label-bottom')) {
         const blt = g.querySelector('text.label-bottom');
-        if (blt) g.setAttribute('data-label-bottom', blt.textContent || '');
+        if (blt) g.setAttribute('data-label-bottom', (blt.textContent || '').trim());
       }
       return;
     }
@@ -385,7 +385,7 @@ export function importSchema(text) {
       if (!g.getAttribute('data-id')) g.setAttribute('data-id', uid('cmp'));
       if (!g.getAttribute('data-label')) {
         const lbl = g.querySelector('text.vdd-label');
-        g.setAttribute('data-label', lbl ? lbl.textContent || 'VDD' : 'VDD');
+        g.setAttribute('data-label', lbl ? (lbl.textContent || 'VDD').trim() : 'VDD');
       }
       return;
     }
@@ -397,7 +397,7 @@ export function importSchema(text) {
       }
       if (!g.getAttribute('data-label')) {
         const lbl = g.querySelector('text.passive-label');
-        g.setAttribute('data-label', lbl ? lbl.textContent || 'P' : 'P');
+        g.setAttribute('data-label', lbl ? (lbl.textContent || 'P').trim() : 'P');
       }
       if (!g.getAttribute('data-rotate')) {
         const useTrans = g.querySelector('use')?.getAttribute('transform') || '';
@@ -427,11 +427,11 @@ export function importSchema(text) {
     // Restore data-label-top/data-label-bottom from the text elements
     if (!g.getAttribute('data-label-top')) {
       const tl = g.querySelector('text.label-top');
-      if (tl) g.setAttribute('data-label-top', tl.textContent || '');
+      if (tl) g.setAttribute('data-label-top', (tl.textContent || '').trim());
     }
     if (!g.getAttribute('data-label-bottom')) {
       const bl = g.querySelector('text.label-bottom');
-      if (bl) g.setAttribute('data-label-bottom', bl.textContent || '');
+      if (bl) g.setAttribute('data-label-bottom', (bl.textContent || '').trim());
     }
   });
   // Ensure all imported lines have data-id

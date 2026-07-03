@@ -591,27 +591,27 @@ export function readLabels(el) {
   for (let i = 0; i < rows; i++) {
     const l = el.querySelector(`text.pin-left[data-row="${i}"]`);
     const r = el.querySelector(`text.pin-right[data-row="${i}"]`);
-    left.push(l  ? l.textContent  : defaultLabel('L', i));
-    right.push(r ? r.textContent : defaultLabel('R', i));
+    left.push(l  ? l.textContent.trim()  : defaultLabel('L', i));
+    right.push(r ? r.textContent.trim() : defaultLabel('R', i));
   }
   const topLabel = el.querySelector('text.label-top');
   const bottomLabel = el.querySelector('text.label-bottom');
   return {
     left, right,
-    top: topLabel ? topLabel.textContent : '',
-    bottom: bottomLabel ? bottomLabel.textContent : ''
+    top: topLabel ? topLabel.textContent.trim() : '',
+    bottom: bottomLabel ? bottomLabel.textContent.trim() : ''
   };
 }
 
 /** Read the top label text of a component. */
 export function readLabelTop(el) {
   const t = el.querySelector('text.label-top');
-  return t ? t.textContent : '';
+  return t ? t.textContent.trim() : '';
 }
 /** Read the bottom label text of a component. */
 export function readLabelBottom(el) {
   const t = el.querySelector('text.label-bottom');
-  return t ? t.textContent : '';
+  return t ? t.textContent.trim() : '';
 }
 /** Read the absolute top-left pin origin (in SVG units) of a component. */
 export function readOrigin(el) {
