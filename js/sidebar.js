@@ -190,6 +190,7 @@ function renderPassivePanel(body, g) {
   clear(body);
   const type = g.getAttribute('data-type') || 'component';
   const label = g.getAttribute('data-label') || '';
+  const labelSecondary = g.getAttribute('data-label-secondary') || '';
   const rot = g.getAttribute('data-rotate') || '0';
 
   body.appendChild(el('h3', { style: 'margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--fg-secondary);' }, [`${type}`]));
@@ -204,6 +205,17 @@ function renderPassivePanel(body, g) {
     }),
   ]);
   body.appendChild(labelRow);
+
+  const valueRow = el('div', { style: 'margin-bottom: 8px;' }, [
+    el('label', { style: 'font-size: 11px; color: #666; display: block; margin-bottom: 2px;' }, ['Component Value / Part Number']),
+    el('input', {
+      type: 'text',
+      value: labelSecondary,
+      placeholder: 'e.g. 10k, 0.1uF',
+      oninput: (e) => updateComponent(g, { labelPassiveSecondary: e.target.value }),
+    }),
+  ]);
+  body.appendChild(valueRow);
 
   const rotRow = el('div', { style: 'margin-bottom: 12px;' }, [
     el('label', { style: 'font-size: 11px; color: #666; display: block; margin-bottom: 2px;' }, ['Rotation']),

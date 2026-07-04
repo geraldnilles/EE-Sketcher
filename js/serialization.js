@@ -8,6 +8,7 @@
    ===================================================================== */
 
 import { snap, uid } from './state.js';
+import { updateComponent } from './components.js';
 import { setViewBox } from './viewport.js';
 import { refreshNetTopology, mergeLines, recomputeJunctions } from './nets.js';
 import { clearSelection } from './interactions.js';
@@ -396,8 +397,12 @@ export function importSchema(text) {
         g.setAttribute('data-type', useHref.replace('#', ''));
       }
       if (!g.getAttribute('data-label')) {
-        const lbl = g.querySelector('text.passive-label');
-        g.setAttribute('data-label', lbl ? (lbl.textContent || 'P').trim() : 'P');
+        const lbl = g.querySelector('text.passive-label-primary') || g.querySelector('text.passive-label');
+        g.setAttribute('data-label', lbl ? (lbl.textContent || '').trim() : '');
+      }
+      if (!g.getAttribute('data-label-secondary')) {
+        const lblSec = g.querySelector('text.passive-label-secondary');
+        g.setAttribute('data-label-secondary', lblSec ? (lblSec.textContent || '').trim() : '');
       }
       if (!g.getAttribute('data-rotate')) {
         const useTrans = g.querySelector('use')?.getAttribute('transform') || '';
@@ -434,6 +439,13 @@ export function importSchema(text) {
       if (bl) g.setAttribute('data-label-bottom', (bl.textContent || '').trim());
     }
   });
+
+  // Backward compatibility: upgrade any old-style passive components
+  // that were imported with only a single <text class="passive-label">.
+  liveSvg.querySelectorAll('g.passive-component').forEach((g) => {
+    updateComponent(g, {});
+  });
+
   // Ensure all imported lines have data-id
   liveSvg.querySelectorAll('line.net-line').forEach((ln) => {
     if (!ln.getAttribute('data-id')) ln.setAttribute('data-id', uid('net'));

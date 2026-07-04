@@ -269,11 +269,62 @@ function setRectSize(g, width, rows) {
  *   Handles label and rotation updates for passive components
  *   (resistor, capacitor, inductor).  Called by updateComponent().
  */
+/**
+ * Ensure a passive component has the modern two-label DOM structure.
+ * Old diagrams store a single <text class="passive-label">.
+ * This converts it (or a missing node) into the full primary + secondary
+ * pair so that all subsequent updates render correctly.
+ */
+function ensurePassiveLabelsUpgraded(el) {
+  const oldStyle = el.querySelector('text.passive-label');
+  let primary = el.querySelector('text.passive-label-primary');
+  let secondary = el.querySelector('text.passive-label-secondary');
+
+  // If we already have the modern primary, just return — nothing to upgrade.
+  if (primary && secondary) return { primary, secondary };
+
+  if (oldStyle) {
+    // Upgrade the old element to become the primary
+    oldStyle.setAttribute('class', 'passive-label passive-label-primary');
+    primary = oldStyle;
+    // Preserve its text as data-label if not already set
+    const text = (oldStyle.textContent || '').trim();
+    if (!el.getAttribute('data-label') && text) {
+      el.setAttribute('data-label', text);
+    }
+  } else if (!primary) {
+    // Neither old nor new primary exists — create a fresh primary
+    primary = document.createElementNS(
+      'http://www.w3.org/2000/svg', 'text');
+    primary.setAttribute('class', 'passive-label passive-label-primary');
+    primary.textContent = el.getAttribute('data-label') || '';
+    el.appendChild(primary);
+  }
+
+  if (!secondary) {
+    secondary = document.createElementNS(
+      'http://www.w3.org/2000/svg', 'text');
+    secondary.setAttribute('class', 'passive-label passive-label-secondary');
+    secondary.textContent = el.getAttribute('data-label-secondary') || '';
+    el.appendChild(secondary);
+  }
+
+  return { primary, secondary };
+}
+
 function updatePassiveComponent(el, patch) {
+  // Upgrade the DOM structure if this is an old-style component
+  ensurePassiveLabelsUpgraded(el);
+
   if (typeof patch.labelPassive === 'string') {
-    const txtEl = el.querySelector('text.passive-label');
+    const txtEl = el.querySelector('text.passive-label-primary');
     if (txtEl) txtEl.textContent = patch.labelPassive;
     el.setAttribute('data-label', patch.labelPassive);
+  }
+  if (typeof patch.labelPassiveSecondary === 'string') {
+    const txtEl = el.querySelector('text.passive-label-secondary');
+    if (txtEl) txtEl.textContent = patch.labelPassiveSecondary;
+    el.setAttribute('data-label-secondary', patch.labelPassiveSecondary);
   }
   if (patch.rotatePassive !== undefined) {
     const rot = String(patch.rotatePassive);
@@ -281,16 +332,34 @@ function updatePassiveComponent(el, patch) {
     if (useEl) useEl.setAttribute('transform', `rotate(${rot})`);
     el.setAttribute('data-rotate', rot);
 
-    const txtEl = el.querySelector('text.passive-label');
-    if (txtEl) {
-      if (rot === '90') {
-        txtEl.setAttribute('x', '20');
-        txtEl.setAttribute('y', '0');
-        txtEl.setAttribute('text-anchor', 'start');
-      } else {
-        txtEl.setAttribute('x', '15');
-        txtEl.setAttribute('y', '-15');
-        txtEl.setAttribute('text-anchor', 'start');
+    const txtPrimary = el.querySelector('text.passive-label-primary');
+    const txtSecondary = el.querySelector('text.passive-label-secondary');
+
+    if (rot === '90') {
+      // Vertical orientation — wires route Top/Bottom
+      // Move both labels to the right side so they don't overlap wires
+      if (txtPrimary) {
+        txtPrimary.setAttribute('x', '20');
+        txtPrimary.setAttribute('y', '-10');
+        txtPrimary.setAttribute('text-anchor', 'start');
+      }
+      if (txtSecondary) {
+        txtSecondary.setAttribute('x', '20');
+        txtSecondary.setAttribute('y', '12');
+        txtSecondary.setAttribute('text-anchor', 'start');
+      }
+    } else {
+      // Horizontal orientation — wires route Left/Right
+      // Split labels above and below the body
+      if (txtPrimary) {
+        txtPrimary.setAttribute('x', '0');
+        txtPrimary.setAttribute('y', '-16');
+        txtPrimary.setAttribute('text-anchor', 'middle');
+      }
+      if (txtSecondary) {
+        txtSecondary.setAttribute('x', '0');
+        txtSecondary.setAttribute('y', '24');
+        txtSecondary.setAttribute('text-anchor', 'middle');
       }
     }
   }
@@ -702,6 +771,7 @@ export function createPassiveComponent(type, x, y) {
   g.setAttribute('data-id', uid('cmp'));
   g.setAttribute('data-type', type);
   g.setAttribute('data-label', '');
+  g.setAttribute('data-label-secondary', '');
   g.setAttribute('data-rotate', '0');
 
   const useEl = document.createElementNS(SVG_NS, 'use');
@@ -709,13 +779,23 @@ export function createPassiveComponent(type, x, y) {
   useEl.setAttribute('transform', 'rotate(0)');
   g.appendChild(useEl);
 
-  const txtEl = document.createElementNS(SVG_NS, 'text');
-  txtEl.setAttribute('class', 'passive-label');
-  txtEl.setAttribute('x', '15');
-  txtEl.setAttribute('y', '-15');
-  txtEl.setAttribute('text-anchor', 'start');
-  txtEl.textContent = '';
-  g.appendChild(txtEl);
+  // Primary label (above body at 0 degrees — Reference Designator)
+  const txtPrimary = document.createElementNS(SVG_NS, 'text');
+  txtPrimary.setAttribute('class', 'passive-label passive-label-primary');
+  txtPrimary.setAttribute('x', '0');
+  txtPrimary.setAttribute('y', '-16');
+  txtPrimary.setAttribute('text-anchor', 'middle');
+  txtPrimary.textContent = '';
+  g.appendChild(txtPrimary);
+
+  // Secondary label (below body at 0 degrees — Component Value / Part Number)
+  const txtSecondary = document.createElementNS(SVG_NS, 'text');
+  txtSecondary.setAttribute('class', 'passive-label passive-label-secondary');
+  txtSecondary.setAttribute('x', '0');
+  txtSecondary.setAttribute('y', '24');
+  txtSecondary.setAttribute('text-anchor', 'middle');
+  txtSecondary.textContent = '';
+  g.appendChild(txtSecondary);
 
   return appendComponentToLayer(g);
 }
@@ -750,9 +830,10 @@ export function duplicateComponent(el) {
     // Passive Components (Resistors, Capacitors, Inductors, Diodes)
     const type = el.getAttribute('data-type');
     const label = el.getAttribute('data-label') || '';
+    const labelSecondary = el.getAttribute('data-label-secondary') || '';
     const rotate = parseInt(el.getAttribute('data-rotate') || '0', 10);
     newEl = createPassiveComponent(type, newX, newY);
-    updateComponent(newEl, { labelPassive: label, rotatePassive: rotate });
+    updateComponent(newEl, { labelPassive: label, labelPassiveSecondary: labelSecondary, rotatePassive: rotate });
 
   } else if (el.classList.contains('comment-component')) {
     // Text Comment Blocks

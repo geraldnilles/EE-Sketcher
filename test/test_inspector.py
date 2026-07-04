@@ -259,7 +259,7 @@ def run():
             page.wait_for_timeout(100)
             # Verify the passive label text updated
             passive = page.locator(".passive-component.is-selected").first
-            passive_label = passive.locator("text.passive-label")
+            passive_label = passive.locator("text.passive-label-primary")
             assert passive_label.text_content() == "R42", (
                 f"Passive label should be 'R42', got '{passive_label.text_content()}'"
             )
