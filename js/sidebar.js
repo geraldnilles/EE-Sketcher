@@ -4,7 +4,7 @@
    Re-renders on 'selection-change' and after data mutations.
    ===================================================================== */
 
-import { appState } from './state.js';
+import { appState, saveDeleteSnapshot } from './state.js';
 import { readLabels, getRows, getWidth, getHeight, updateComponent, deleteComponent, readOrigin, readCommentLines, getCommentLinesCount, duplicateComponent } from './components.js';
 import { deleteLine } from './nets.js';
 import { readLineCoords } from './nets/net-interaction.js';
@@ -157,7 +157,7 @@ function renderComponentPanel(body, g) {
   body.appendChild(el('button', {
     class: 'danger',
     style: 'width: 100%; margin-top: 4px;',
-    onclick: () => deleteComponent(g),
+    onclick: () => { saveDeleteSnapshot(); deleteComponent(g); },
     title: "Delete Component  [x / Backspace / Delete]",
   }, ['Delete Component']));
 }
@@ -180,7 +180,7 @@ function renderGndPanel(body, g) {
   body.appendChild(el('button', {
     class: 'danger',
     style: 'width: 100%; margin-top: 4px;',
-    onclick: () => deleteComponent(g),
+    onclick: () => { saveDeleteSnapshot(); deleteComponent(g); },
     title: "Delete GND  [x / Backspace / Delete]",
   }, ['Delete Component']));
 }
@@ -245,7 +245,7 @@ function renderPassivePanel(body, g) {
   body.appendChild(el('button', {
     class: 'danger',
     style: 'width: 100%; margin-top: 4px;',
-    onclick: () => deleteComponent(g),
+    onclick: () => { saveDeleteSnapshot(); deleteComponent(g); },
   }, ['Delete Component']));
 }
 
@@ -283,7 +283,7 @@ function renderVddPanel(body, g) {
   body.appendChild(el('button', {
     class: 'danger',
     style: 'width: 100%; margin-top: 4px;',
-    onclick: () => deleteComponent(g),
+    onclick: () => { saveDeleteSnapshot(); deleteComponent(g); },
     title: "Delete VDD  [x / Backspace / Delete]",
   }, ['Delete Component']));
 }
@@ -386,7 +386,7 @@ function renderContainerPanel(body, g) {
   body.appendChild(el('button', {
     class: 'danger',
     style: 'width: 100%; margin-top: 4px;',
-    onclick: () => deleteComponent(g),
+    onclick: () => { saveDeleteSnapshot(); deleteComponent(g); },
     title: 'Delete Container  [x / Backspace / Delete]',
   }, ['Delete Container']));
 }
@@ -431,6 +431,7 @@ function renderCommentPanel(body, g) {
           if (g.__enterAddingLine) return;
           const allLines = readCommentLines(g);
           if (allLines.every(txt => !txt || txt.trim() === '')) {
+            saveDeleteSnapshot();
             deleteComponent(g);
           }
         },
@@ -463,7 +464,7 @@ function renderCommentPanel(body, g) {
   body.appendChild(el('button', {
     class: 'danger',
     style: 'width: 100%; margin-top: 4px;',
-    onclick: () => deleteComponent(g),
+    onclick: () => { saveDeleteSnapshot(); deleteComponent(g); },
     title: 'Delete Comment  [x / Backspace / Delete]',
   }, ['Delete Comment']));
 }
@@ -479,7 +480,7 @@ function renderLinePanel(body, line) {
   body.appendChild(el('button', {
     class: 'danger',
     style: 'width: 100%;',
-    onclick: () => deleteLine(line),
+    onclick: () => { saveDeleteSnapshot(); deleteLine(line); },
     title: "Delete Line  [x / Backspace / Delete]",
   }, ['Delete Line']));
 }

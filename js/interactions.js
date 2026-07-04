@@ -6,7 +6,7 @@
      connect : two clicks -> createLine()
    ===================================================================== */
 
-import { snap, clamp, appState, setMode } from './state.js';
+import { snap, clamp, appState, setMode, saveDeleteSnapshot, undoDelete } from './state.js';
 import { createLine, deleteLine, refreshNetTopology, recomputeJunctions } from './nets.js';
 import { findEndpointHit } from './nets/net-factory.js';
 import { readLineCoords, findLineNearPoint, shiftLineForEndpointDrag } from './nets/net-interaction.js';
@@ -425,6 +425,13 @@ export function initInteractions() {
     }
 
     if (evt.target && /(INPUT|TEXTAREA|SELECT)/.test(evt.target.tagName || '')) return;
+
+    /* ---- Ctrl+Z / Cmd+Z: Undo last delete action ---- */
+    if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'z' || evt.key === 'Z')) {
+      evt.preventDefault();
+      undoDelete();
+      return;
+    }
     if (evt.key === 's' || evt.key === 'S') setMode('select');
     if (evt.key === 'd' || evt.key === 'D') setMode('drag');
     if (evt.key === 'c' || evt.key === 'C') setMode('connect');
@@ -455,6 +462,7 @@ export function initInteractions() {
       const selectedEls = Array.from(document.querySelectorAll('.is-selected'));
 
       if (selectedEls.length > 0) {
+        saveDeleteSnapshot();
         selectedEls.forEach((el) => {
           if (el.classList && el.classList.contains('net-line')) {
             deleteLine(el);

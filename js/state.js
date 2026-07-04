@@ -42,6 +42,7 @@ export const appState = {
   selected: null,          // currently selected SVG element (.generic-component | .net-line) or null
   drawStart: null,         // {x, y} in grid coords for in-progress net draw
   dragging: null,          // { kind, el, ... } during an in-progress drag
+  lastDeleteSnapshot: null // Stores layer innerHTML states right before a deletion occurs
 };
 
 /** Update the mode, clear stale flags, dispatch a 'modechange' event. */
@@ -65,4 +66,51 @@ export function setMode(mode) {
 
   appState.mode = mode;
   window.dispatchEvent(new CustomEvent('modechange', { detail: { mode } }));
+}
+
+/**
+ * Captures the current innerHTML of all persistent diagram layers 
+ * right before an element or group of elements is removed.
+ */
+export function saveDeleteSnapshot() {
+  const layers = ['containers-layer', 'nets-layer', 'components-layer', 'junctions-layer'];
+  const snapshot = {};
+  layers.forEach((id) => {
+    const node = document.getElementById(id);
+    snapshot[id] = node ? node.innerHTML : '';
+  });
+  appState.lastDeleteSnapshot = snapshot;
+}
+
+/**
+ * Restores the previous layer state from the last deletion action snapshot.
+ * Re-runs full topology calculations to guarantee coordinate sync.
+ */
+export function undoDelete() {
+  if (!appState.lastDeleteSnapshot) return false;
+
+  const layers = ['containers-layer', 'nets-layer', 'components-layer', 'junctions-layer'];
+  layers.forEach((id) => {
+    const node = document.getElementById(id);
+    if (node) {
+      node.innerHTML = appState.lastDeleteSnapshot[id];
+    }
+  });
+
+  // Consume the snapshot so it is a one-shot restoration
+  appState.lastDeleteSnapshot = null;
+
+  // Flush any stale selection identifiers from the workspace
+  document.querySelectorAll('.is-selected').forEach((e) => e.classList.remove('is-selected'));
+  appState.selected = null;
+  window.dispatchEvent(new CustomEvent('selection-change', { detail: { selected: null } }));
+
+  // Dynamic import to break any circular module loading dependencies at initialization
+  import('./nets.js').then((m) => {
+    if (m && m.refreshNetTopology) {
+      m.refreshNetTopology();
+    }
+  }).catch((err) => console.error('Undo topology synchronization failed:', err));
+
+  return true;
 }
