@@ -342,24 +342,28 @@ function updatePassiveComponent(el, patch) {
         txtPrimary.setAttribute('x', '20');
         txtPrimary.setAttribute('y', '-10');
         txtPrimary.setAttribute('text-anchor', 'start');
+        txtPrimary.removeAttribute('dominant-baseline');
       }
       if (txtSecondary) {
         txtSecondary.setAttribute('x', '20');
         txtSecondary.setAttribute('y', '12');
         txtSecondary.setAttribute('text-anchor', 'start');
+        txtSecondary.removeAttribute('dominant-baseline');
       }
     } else {
       // Horizontal orientation — wires route Left/Right
       // Split labels above and below the body
       if (txtPrimary) {
         txtPrimary.setAttribute('x', '0');
-        txtPrimary.setAttribute('y', '-16');
+        txtPrimary.setAttribute('y', '-25');
         txtPrimary.setAttribute('text-anchor', 'middle');
+        txtPrimary.setAttribute('dominant-baseline', 'text-before-edge');
       }
       if (txtSecondary) {
         txtSecondary.setAttribute('x', '0');
-        txtSecondary.setAttribute('y', '24');
+        txtSecondary.setAttribute('y', '25');
         txtSecondary.setAttribute('text-anchor', 'middle');
+        txtSecondary.setAttribute('dominant-baseline', 'text-after-edge');
       }
     }
   }
@@ -783,8 +787,9 @@ export function createPassiveComponent(type, x, y) {
   const txtPrimary = document.createElementNS(SVG_NS, 'text');
   txtPrimary.setAttribute('class', 'passive-label passive-label-primary');
   txtPrimary.setAttribute('x', '0');
-  txtPrimary.setAttribute('y', '-16');
+  txtPrimary.setAttribute('y', '-25');
   txtPrimary.setAttribute('text-anchor', 'middle');
+  txtPrimary.setAttribute('dominant-baseline', 'text-before-edge');
   txtPrimary.textContent = '';
   g.appendChild(txtPrimary);
 
@@ -792,8 +797,9 @@ export function createPassiveComponent(type, x, y) {
   const txtSecondary = document.createElementNS(SVG_NS, 'text');
   txtSecondary.setAttribute('class', 'passive-label passive-label-secondary');
   txtSecondary.setAttribute('x', '0');
-  txtSecondary.setAttribute('y', '24');
+  txtSecondary.setAttribute('y', '25');
   txtSecondary.setAttribute('text-anchor', 'middle');
+  txtSecondary.setAttribute('dominant-baseline', 'text-after-edge');
   txtSecondary.textContent = '';
   g.appendChild(txtSecondary);
 
