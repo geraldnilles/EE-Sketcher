@@ -78,7 +78,7 @@ export function getComponentRects() {
 
       // Determine the long (pin-to-pin) axis and build a bounding rect.
       let rx, ry, rw, rh;
-      if (rot === '90') {
+      if (rot === '90' || rot === '270') {
         // Symbol is rotated 90° — swap the axis roles.
         if (p1y === p2y) {
           // Pins originally on a horizontal line → after rotation they're vertical.

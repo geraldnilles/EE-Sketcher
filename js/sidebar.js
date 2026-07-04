@@ -225,6 +225,8 @@ function renderPassivePanel(body, g) {
     }, [
       el('option', { value: '0', selected: rot === '0' }, ['0 Degrees (Horizontal)']),
       el('option', { value: '90', selected: rot === '90' }, ['90 Degrees (Vertical)']),
+      el('option', { value: '180', selected: rot === '180' }, ['180 Degrees (Horizontal)']),
+      el('option', { value: '270', selected: rot === '270' }, ['270 Degrees (Vertical)']),
     ]),
   ]);
   body.appendChild(rotRow);

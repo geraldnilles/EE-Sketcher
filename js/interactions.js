@@ -435,12 +435,17 @@ export function initInteractions() {
       if (btn) btn.click();
     }
 
-    /* ---- r key: rotate selected passive component 0 ↔ 90 ---- */
+    /* ---- r key: cycle selected passive component rotation through 4 quadrants ---- */
     if (evt.key === "r" || evt.key === "R") {
       const el = appState.selected;
       if (el && el.classList && el.classList.contains("passive-component")) {
         const currentRot = parseInt(el.getAttribute("data-rotate") || "0", 10);
-        const newRot = currentRot === 0 ? 90 : 0;
+        let newRot = 0;
+        if (currentRot === 0) newRot = 90;
+        else if (currentRot === 90) newRot = 180;
+        else if (currentRot === 180) newRot = 270;
+        else newRot = 0;
+        
         updateComponent(el, { rotatePassive: newRot });
       }
     }

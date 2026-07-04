@@ -336,8 +336,8 @@ function updatePassiveComponent(el, patch) {
     const txtSecondary = el.querySelector('text.passive-label-secondary');
 
     if (rot === '90') {
-      // Vertical orientation — wires route Top/Bottom
-      // Move both labels to the right side so they don't overlap wires
+      // Vertical orientation (90°) — wires route Top/Bottom
+      // Move both labels to the right side
       if (txtPrimary) {
         txtPrimary.setAttribute('x', '20');
         txtPrimary.setAttribute('y', '-10');
@@ -350,9 +350,39 @@ function updatePassiveComponent(el, patch) {
         txtSecondary.setAttribute('text-anchor', 'start');
         txtSecondary.removeAttribute('dominant-baseline');
       }
+    } else if (rot === '270') {
+      // Vertical orientation (270°) — wires route Top/Bottom
+      // Move both labels to the left side to avoid overlapping lines
+      if (txtPrimary) {
+        txtPrimary.setAttribute('x', '-20');
+        txtPrimary.setAttribute('y', '-10');
+        txtPrimary.setAttribute('text-anchor', 'end');
+        txtPrimary.removeAttribute('dominant-baseline');
+      }
+      if (txtSecondary) {
+        txtSecondary.setAttribute('x', '-20');
+        txtSecondary.setAttribute('y', '12');
+        txtSecondary.setAttribute('text-anchor', 'end');
+        txtSecondary.removeAttribute('dominant-baseline');
+      }
+    } else if (rot === '180') {
+      // Horizontal orientation (180°) — wires route Left/Right
+      // Split labels: primary below the body, secondary above the body
+      if (txtPrimary) {
+        txtPrimary.setAttribute('x', '0');
+        txtPrimary.setAttribute('y', '25');
+        txtPrimary.setAttribute('text-anchor', 'middle');
+        txtPrimary.setAttribute('dominant-baseline', 'text-after-edge');
+      }
+      if (txtSecondary) {
+        txtSecondary.setAttribute('x', '0');
+        txtSecondary.setAttribute('y', '-25');
+        txtSecondary.setAttribute('text-anchor', 'middle');
+        txtSecondary.setAttribute('dominant-baseline', 'text-before-edge');
+      }
     } else {
-      // Horizontal orientation — wires route Left/Right
-      // Split labels above and below the body
+      // Horizontal orientation (0°) — wires route Left/Right
+      // Split labels: primary above the body, secondary below the body
       if (txtPrimary) {
         txtPrimary.setAttribute('x', '0');
         txtPrimary.setAttribute('y', '-25');
