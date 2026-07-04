@@ -235,6 +235,39 @@ def run():
         )
 
 
+        # ------------------------------------------------------------------
+        # 8. Delete multiple elements at once via Delete key
+        # ------------------------------------------------------------------
+        # Clear any lingering selection states
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(50)
+
+        # Add two distinct components to the canvas
+        page.click("#add-component-btn")
+        page.wait_for_timeout(100)
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(50)
+        page.click("#add-resistor-btn")
+        page.wait_for_timeout(100)
+
+        # Simulate a multi-selection state by marking both components as selected
+        page.evaluate("""() => {
+            document.querySelectorAll('.generic-component').forEach(el => el.classList.add('is-selected'));
+        }""")
+        page.wait_for_timeout(50)
+
+        comp_count_before = components_layer.locator(".generic-component").count()
+
+        # Execute mass deletion shortcut
+        page.keyboard.press("Delete")
+        page.wait_for_timeout(100)
+
+        # Verify both components have been successfully removed
+        comp_count_after = components_layer.locator(".generic-component").count()
+        assert comp_count_after == comp_count_before - 2, (
+            f"Multi-deletion failed. Expected {comp_count_before - 2} components, got {comp_count_after}"
+        )
+
         print("  ✓ All deletion assertions passed")
 
 

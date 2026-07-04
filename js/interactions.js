@@ -450,15 +450,20 @@ export function initInteractions() {
       }
     }
 
-    /* ---- x, Backspace, Delete: delete selected element ---- */
+    /* ---- x, Backspace, Delete: delete selected elements ---- */
     if (evt.key === 'x' || evt.key === 'X' || evt.key === 'Backspace' || evt.key === 'Delete') {
-      const el = appState.selected;
-      if (el) {
-        if (el.classList && el.classList.contains('net-line')) {
-          deleteLine(el);
-        } else {
-          deleteComponent(el);
-        }
+      const selectedEls = Array.from(document.querySelectorAll('.is-selected'));
+
+      if (selectedEls.length > 0) {
+        selectedEls.forEach((el) => {
+          if (el.classList && el.classList.contains('net-line')) {
+            deleteLine(el);
+          } else {
+            deleteComponent(el);
+          }
+        });
+
+        clearSelection();
       }
     }
   });
