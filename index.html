@@ -43,9 +43,9 @@
 .component-body {
   fill: #ffffff;
   stroke: var(--comp-stroke, #000000);
+  stroke: #000000;                         /* Fallback for standard renderers */
   stroke-width: var(--comp-stroke-width, 2);
-  rx: 6px;
-  ry: 6px;
+  stroke-width: 2px;                       /* Fallback for standard renderers */
   stroke-linecap: round;
 }
 
@@ -67,9 +67,9 @@
 /* Layer Container Portability Rules */
 .container-body {
   stroke: var(--comp-stroke, #6b7280);
+  stroke: #6b7280;                         /* Fallback for standard renderers */
   stroke-width: var(--comp-stroke-width, 1);
-  rx: 8px;
-  ry: 8px;
+  stroke-width: 1px;                       /* Fallback for standard renderers */
 }
 
 .net-line {

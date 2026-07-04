@@ -78,6 +78,8 @@ export function createComponent(x, y, width, rows) {
   // rect: y=-25 (per spec), height = (rows + 1) * 25
   const rect = document.createElementNS(SVG_NS, 'rect');
   rect.setAttribute('class', 'component-body');
+  rect.setAttribute('rx', '6');  // Explicit geometry for standalone renderers
+  rect.setAttribute('ry', '6');
   rect.setAttribute('x', '0');
   rect.setAttribute('y', '-25');
   rect.setAttribute('width',  String(width));
@@ -159,6 +161,8 @@ export function createContainerComponent(x, y) {
 
   const rect = document.createElementNS(SVG_NS, 'rect');
   rect.setAttribute('class', 'component-body container-body');
+  rect.setAttribute('rx', '8');  // Explicit container radius
+  rect.setAttribute('ry', '8');
   rect.setAttribute('x', '0');
   rect.setAttribute('y', '0');
   rect.setAttribute('width', '200');

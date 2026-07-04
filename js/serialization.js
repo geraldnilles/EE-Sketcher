@@ -69,6 +69,8 @@ function snapImportedCoords(root) {
       if (rect) {
         rect.setAttribute('width', String(Math.max(50, Math.round(w / 50) * 50)));
         rect.setAttribute('height', String(Math.max(50, Math.round(h / 50) * 50)));
+        rect.setAttribute('rx', '8'); // Ensure container corner fidelity
+        rect.setAttribute('ry', '8');
         rect.style.fill = fill;
       }
       return;
@@ -84,6 +86,8 @@ function snapImportedCoords(root) {
       const w = +rect.getAttribute('width');
       const wSnap = Math.max(50, Math.round(w / 50) * 50);
       rect.setAttribute('width', String(wSnap));
+      rect.setAttribute('rx', '6'); // Ensure block corner fidelity
+      rect.setAttribute('ry', '6');
       g.setAttribute('data-width', String(wSnap));
     }
     // Right-side text x
@@ -369,6 +373,8 @@ export function importSchema(text) {
       if (cr) {
         cr.setAttribute('width', g.getAttribute('data-width'));
         cr.setAttribute('height', g.getAttribute('data-height'));
+        cr.setAttribute('rx', '8');
+        cr.setAttribute('ry', '8');
         cr.style.fill = g.getAttribute('data-fill');
       }
       // Restore label attributes from text elements
@@ -423,6 +429,12 @@ export function importSchema(text) {
     if (!g.getAttribute('data-width')) {
       const r = g.querySelector('rect.component-body');
       if (r) g.setAttribute('data-width', r.getAttribute('width'));
+    }
+    // Ensure block corner radii are set on imported blocks
+    const rForRadius = g.querySelector('rect.component-body:not(.container-body)');
+    if (rForRadius) {
+      rForRadius.setAttribute('rx', '6');
+      rForRadius.setAttribute('ry', '6');
     }
     if (!g.getAttribute('data-rows')) {
       const pins = g.querySelectorAll('text.pin');

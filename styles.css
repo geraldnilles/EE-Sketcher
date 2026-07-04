@@ -205,7 +205,11 @@ input[type="text"]:focus, textarea:focus {
 #canvas.mode-connect  { cursor: crosshair; }
 
 /* component & line highlight */
-.component-body { stroke-width: var(--comp-stroke-width, 2); transition: stroke .12s ease, stroke-width .12s ease; }
+.component-body { 
+  stroke-width: 2px;
+  stroke-width: var(--comp-stroke-width, 2); 
+  transition: stroke .12s ease, stroke-width .12s ease; 
+}
 .generic-component:hover .component-body { stroke: var(--accent); }
 .is-selected .component-body {
   stroke: var(--accent) !important;
@@ -435,10 +439,10 @@ button-row {
 
 /* ===== Container component styling ===== */
 .container-body {
+  stroke: #6b7280;
   stroke: var(--comp-stroke, #6b7280);
+  stroke-width: 1px;
   stroke-width: var(--comp-stroke-width, 1);
-  rx: 8px;
-  ry: 8px;
   pointer-events: all;
   transition: stroke 0.12s ease, stroke-width 0.12s ease;
 }
